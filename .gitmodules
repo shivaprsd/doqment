@@ -1,0 +1,6 @@
+[submodule "pdfjs"]
+	path = src/pdfjs
+	url = https://github.com/shivaprsd/pdfjs-generic
+[submodule "doq"]
+	path = src/doq
+	url = https://github.com/shivaprsd/doq

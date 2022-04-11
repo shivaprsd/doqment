@@ -1,0 +1,7 @@
+*.js.map
+*web/debugger.js
+*web/*.pdf
+*.git*
+doq/*
+*VERSION
+*.DS_Store

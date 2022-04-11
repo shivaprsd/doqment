@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+  "version": "0.1",
+
+  "name": "doqment PDF Reader",
+  "short_name": "doqment",
+  "description": "Mozilla's HTML5 PDF Viewer with Reader-mode add-on.",
+  "author": "Shiva Prasad",
+  "homepage_url": "https://github.com/shivaprsd/doqment",
+  "icons": {
+    "48": "images/icon.svg", "96": "images/icon.svg"
+  },
+
+  "permissions": [
+    "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "web_accessible_resources": ["pdfjs/web/viewer.html"],
+
+  "browser_action": {
+    "default_icon": "images/button.svg",
+    "default_title": "Open PDF Reader in New Tab"
+  }
+}
