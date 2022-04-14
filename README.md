@@ -13,12 +13,18 @@ Here is the demo PDF rendered in *Solarized Light* color scheme:
 
 View [more screenshots](docs/gallery.md#color-schemes).
 
-## Development and testing
+## Installation
+
+[ ![Get the Add-on](docs/get-addon.png) ][4]
+
+Latest release can be installed from [AMO][4] or downloaded from [Releases][5].
 
 It is recommended to disable the built-in viewer while this extension is
 enabled to avoid funny and weird behaviours while opening/downloading PDFs.
 (Go to *Settings* -> *Files and Applications* -> set the *Action* for PDF to
 something other than *Open in Firefox*).
+
+## Development and testing
 
 1. Clone this repo recursively (to get the submodules)
 2. Hack to your heart's content
@@ -54,3 +60,5 @@ Happy PDF Reading!
 [1]: https://mozilla.github.io/pdf.js/web/viewer.html
 [2]: https://github.com/shivaprsd/doq
 [3]: https://github.com/shivaprsd/doq#why-doq
+[4]: https://addons.mozilla.org/addon/doqment
+[5]: https://github.com/shivaprsd/doqment/releases/latest
