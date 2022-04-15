@@ -8,20 +8,22 @@
   "author": "Shiva Prasad",
   "homepage_url": "https://github.com/shivaprsd/doqment",
   "icons": {
-    "48": "images/icon.svg", "96": "images/icon.svg"
+    "48": "images/icon.png",
+    "96": "images/icon@2x.png",
+    "128": "images/icon@3x.png"
   },
 
-  "permissions": [
-    "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>"
-  ],
+  "permissions": ["webNavigation", "*://*/*.pdf"],
   "background": {
     "scripts": ["scripts/background.js"],
     "persistent": false
   },
-  "web_accessible_resources": ["pdfjs/web/viewer.html"],
 
   "browser_action": {
-    "default_icon": "images/button.svg",
+    "default_icon": {
+      "19": "images/button.png",
+      "38": "images/button@2x.png"
+    },
     "default_title": "Open PDF Reader in New Tab"
   },
   "commands": {
