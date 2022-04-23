@@ -2,6 +2,9 @@
 *web/debugger.js
 *web/*.pdf
 *.git*
-doq/*
+doq/*.md
+doq/*.txt
+doq/docs/*
+doq/package.json
 *VERSION
 *.DS_Store
