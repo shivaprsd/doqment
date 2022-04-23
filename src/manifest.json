@@ -20,6 +20,12 @@
   },
   "web_accessible_resources": ["pdfjs/web/viewer.html"],
 
+  "page_action": {
+    "browser_style": true,
+    "default_icon": "images/link.svg",
+    "default_title": "Get original link to PDF",
+    "default_popup": "pages/popup.html"
+  },
   "browser_action": {
     "default_icon": "images/button.svg",
     "default_title": "Open PDF Reader in New Tab"

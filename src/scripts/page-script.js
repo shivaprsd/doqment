@@ -11,6 +11,9 @@ if (self === top && pdfUrl?.startsWith("http")) {
     if (resp.ok && resp.headers.get("content-type")?.includes("image/"))
       favIcon.href = origIcon;
   });
+  browser.tabs.getCurrent().then(tab => {
+    browser.pageAction.show(tab.id);
+  });
 }
 
 function linkIcon(href) {
