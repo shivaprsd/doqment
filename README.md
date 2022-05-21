@@ -7,11 +7,11 @@
 change the PDF's colors) on top, packaged as an extension for Firefox. It
 replaces the built-in PDF.js viewer as the default PDF viewer application.
 
-Here is the demo PDF rendered in *Solarized Light* color scheme:
+Here is the demo PDF rendered in *Solarized Light* theme:
 
 ![Screenshot of doqment running in Firefox](docs/grabs/solarized-light.png)
 
-View [more screenshots](docs/gallery.md#color-schemes).
+View [more screenshots](docs/gallery.md#themes).
 
 ## Installation
 

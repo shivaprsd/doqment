@@ -10,18 +10,22 @@
 
 ![Screenshot of the reader mode toolbar](grabs/reader-toolbar.png)
 
-## Color schemes
+## Themes
+
+### Nord
+
+![PDF rendered in Nord theme](grabs/nord-dark.png)
 
 ### Solarized
 
-![PDF rendered in Solarized dark scheme](grabs/solarized-dark.png)
+![PDF rendered in Solarized dark theme](grabs/solarized-dark.png)
 
 ### Firefox Reader View
 
-![PDF rendered in Firefox sepia scheme](grabs/firefox-sepia.png)
+![PDF rendered in Firefox sepia theme](grabs/firefox-sepia.png)
 
 ### Safari Reader View
 
-![PDF rendered in Safari gray scheme](grabs/safari-gray.png)
+![PDF rendered in Safari gray theme](grabs/safari-gray.png)
 
 ---
