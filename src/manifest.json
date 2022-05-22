@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.1",
+  "version": "0.2",
 
   "name": "doqment PDF Reader",
   "short_name": "doqment",
@@ -23,5 +23,14 @@
   "browser_action": {
     "default_icon": "images/button.svg",
     "default_title": "Open PDF Reader in New Tab"
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "mac": "MacCtrl+Q",
+        "default": "Alt+Q"
+      },
+      "description": "Open PDF Reader in New Tab"
+    }
   }
 }

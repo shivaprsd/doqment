@@ -28,4 +28,8 @@
 
 ![PDF rendered in Safari gray theme](grabs/safari-gray.png)
 
+### Invert (Night mode)
+
+![PDF with inverted colors](grabs/invert-mode.png)
+
 ---

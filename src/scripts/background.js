@@ -15,7 +15,7 @@ const localPdf = {
 };
 browser.webRequest.onHeadersReceived.addListener(redirect, pdfSources, options);
 browser.webNavigation.onBeforeNavigate.addListener(loadViewer, localPdf);
-browser.browserAction.onClicked.addListener(newTab);
+browser.browserAction.onClicked.addListener(newViewer);
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
@@ -31,8 +31,13 @@ function loadViewer(details) {
   if (!details.frameId)
     browser.tabs.update(details.tabId, { url: messageUrl });
 }
-function newTab() {
-  browser.tabs.create({ url: splashUrl });
+function newViewer(_, clickData) {
+  const btn = clickData?.button;
+  const mods = clickData?.modifiers;
+  if (mods?.includes("Ctrl") || mods?.includes("Command") || btn === 1)
+    browser.windows.create({ type: "popup", url: splashUrl });
+  else
+    browser.tabs.create({ url: splashUrl });
 }
 
 /* Determine if response is a PDF by inspecting its MIME type, file extension
