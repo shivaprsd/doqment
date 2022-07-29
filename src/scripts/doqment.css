@@ -1,0 +1,8 @@
+/* Smart zoom */
+.smartZoom #viewerContainer {
+  scroll-snap-type: x mandatory;
+}
+.smartZoom .pdfViewer {
+  scroll-snap-align: start;
+  scroll-margin-left: var(--scroll-snap);
+}
