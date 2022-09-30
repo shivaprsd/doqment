@@ -43,6 +43,10 @@ const Doqment = {
     } else {
       document.addEventListener("webviewerloaded", registerMonitor.bind(this));
     }
+    /* FIXME: temporary, experimental */
+    const options = window.PDFViewerApplicationOptions;
+    options.set("annotationEditorMode", 0);
+    options.set("disablePreferences", 1);
   },
 
   toggleToolbar() {
