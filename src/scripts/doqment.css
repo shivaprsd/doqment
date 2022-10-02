@@ -1,3 +1,18 @@
+/* Hide toolbar */
+#mainContainer, #sidebarContainer {
+  transition-property: left, margin-top !important;
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+.toolbarHidden :is(#mainContainer, #sidebarContainer) {
+  margin-top: -33px;
+}
+/* Reduce toolbar clutter in small devices */
+@media screen and (max-width: 435px) {
+  #toolbarViewerLeft > #numPages {
+    display: none;
+  }
+}
 /* Smart zoom */
 .smartZoom #viewerContainer {
   scroll-snap-type: x mandatory;

@@ -1,5 +1,9 @@
 const Doqment = {
   config: {},
+  options: { autoToolbar: false },
+  scrollDir: -1,
+  scrollMark: 0,
+  oldScrollTop: 0,
   zoomScale: 0,
   zoomTfm: {},
 
@@ -20,6 +24,12 @@ const Doqment = {
 
   load() {
     this.config = this.getReaderConfig();
+    document.addEventListener("keydown", this.handleShortcut.bind(this));
+    /* Auto-hide toolbar by default on touch devices */
+    if (window.matchMedia("only screen and (hover: none)").matches) {
+      this.options.autoToolbar = true;
+    }
+    this.config.viewer.onscroll = this.toggleToolbar.bind(this);
     this.config.viewer.ondblclick = this.toggleSmartZoom.bind(this);
     const app = window.PDFViewerApplication;
     const registerMonitor = () => {
@@ -33,13 +43,38 @@ const Doqment = {
     } else {
       document.addEventListener("webviewerloaded", registerMonitor.bind(this));
     }
-    document.addEventListener("keydown", this.handleShortcut.bind(this));
+  },
+
+  toggleToolbar() {
+    if (!this.options.autoToolbar)
+      return;
+    const hideThresh = 50, showThresh = -20;
+    const {viewer} = this.config;
+    let delta = viewer.scrollTop - this.oldScrollTop;
+    this.oldScrollTop = viewer.scrollTop;
+    if (!this.scrollMark && this.scrollDir * delta < 0) {
+      this.scrollDir = -this.scrollDir;
+      this.scrollMark = viewer.scrollTop;
+    }
+    if (this.scrollMark) {
+      delta = viewer.scrollTop - this.scrollMark;
+      if (delta > hideThresh) {
+        this.config.viewerClassList.add("toolbarHidden");
+        this.scrollMark = 0;
+      } else if (delta < showThresh) {
+        this.config.viewerClassList.remove("toolbarHidden");
+        this.scrollMark = 0;
+      }
+    }
   },
 
   handleShortcut(e) {
     if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
       return;
-    if (e.key === "z" || e.key === "Z") {
+    if (e.code === "F3") {
+      this.config.viewerClassList.toggle("toolbarHidden");
+      e.preventDefault();
+    } else if (e.key === "z" || e.key === "Z") {
       this.toggleSmartZoom(e);
     }
   },
