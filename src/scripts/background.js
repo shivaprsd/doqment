@@ -19,7 +19,6 @@ browser.browserAction.onClicked.addListener(newViewer);
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
-const getViewerURL = (url) => `${baseUrl}?file=${encodeURIComponent(url)}`;
 const messageUrl = getViewerURL("/pages/Retry.pdf");
 const splashUrl = getViewerURL("/pages/Open.pdf");
 
@@ -38,6 +37,11 @@ function newViewer(_, clickData) {
     browser.windows.create({ type: "popup", url: splashUrl });
   else
     browser.tabs.create({ url: splashUrl });
+}
+function getViewerURL(url) {
+  const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
+  url = url.split("#", 2).map(encodeFirst).join("#");
+  return `${baseUrl}?file=${url}`;
 }
 
 /* Determine if response is a PDF by inspecting its MIME type, file extension
