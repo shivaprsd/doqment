@@ -1,0 +1,28 @@
+body {
+  color: rgb(39, 39, 39);
+  background-color: rgb(255, 255, 255);
+}
+p {
+  margin: 0.4em;
+  padding: 0.6em;
+  border-radius: 0.3em;
+}
+p.url:hover {
+  background-color: rgb(226, 226, 227);
+}
+p.url:active {
+  background-color: rgb(191, 191, 193);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: rgb(251, 251, 254);
+    background-color: rgb(66, 65, 77);
+  }
+  p.url:hover {
+    background-color: rgb(83, 82, 93);
+  }
+  p.url:active {
+    background-color: rgb(113, 112, 122);
+  }
+}
