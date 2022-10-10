@@ -96,13 +96,14 @@ const Doqment = {
       return;
     e.preventDefault();
     const viewBox = pdfViewer.container;
-    const target = e.detail ? e.target : document.querySelector("span:hover");
-    const coord = e.clientY - viewBox.offsetTop || viewBox.clientHeight / 2;
-    const page = pdfViewer.getPageView(pdfViewer.currentPageNumber - 1);
+    const {target, coord} = this.getZoomTarget(e, viewBox);
+    const pageNum = target.closest(".page")?.dataset.pageNumber ||
+                    pdfViewer.currentPageNumber;
+    const page = pdfViewer.getPageView(pageNum - 1);
     const curZoom = page.div.offsetWidth / viewBox.clientWidth;
     /* Smart zoom only if page is in view range, but zoomed out */
     if (curZoom > 0.8 && curZoom < 2 && !this.zoomScale) {
-      this.zoomTfm = this.smartZoom(target, coord);
+      this.zoomTfm = this.smartZoom(target, coord, page);
       const scroll = Math.round(-this.zoomTfm.scrollX);
       this.config.docStyle.setProperty("--scroll-snap", scroll + "px");
       this.config.viewerClassList.add("smartZoom")
@@ -112,18 +113,29 @@ const Doqment = {
       viewBox.scrollBy(0, (zoomInv - 1) * coord);
     }
   },
+  getZoomTarget(e, viewBox) {
+    let tgt, ypos;
+    if (e.detail) {         /* Double click */
+      tgt = e.target;
+      ypos = e.clientY;
+    } else {                /* Keyboard shortcut */
+      tgt = [...document.querySelectorAll(".page :hover")].pop() || viewBox;
+      const tgtRect = tgt.getBoundingClientRect();
+      ypos = (tgtRect.top + tgtRect.bottom) / 2;
+    }
+    return {target: tgt, coord: ypos - viewBox.offsetTop};
+  },
 
-  smartZoom(target, coord, nbrLines = 1, zoomPad = 0.015, maxZoom = 5) {
+  smartZoom(target, coord, page, nbrLines = 1, zoomPad = 0.015, maxZoom = 5) {
     const pdfViewer = window.PDFViewerApplication.pdfViewer;
     const viewBox = pdfViewer.container;
-    const tgtRect = target?.getBoundingClientRect();
+    const tgtRect = target.getBoundingClientRect();
     const nbrRects = r => {
       const {top, bottom, height} = tgtRect;
       const range = (nbrLines + 0.5) * height;
       return (r.top > top - range) && (r.bottom < bottom + range);
     }
-    /* Get non-empty text rects around target in current page */
-    const page = pdfViewer.getPageView(pdfViewer.currentPageNumber - 1);
+    /* Get non-empty text rects around target in the page */
     const {textDivs, textLayerDiv} = page.textLayer;
     const texts = textDivs.filter(e => e.textContent.trim());
     let textRects = texts.map(e => e.getBoundingClientRect());
@@ -151,9 +163,10 @@ const Doqment = {
     return {scale: zoom, scrollX: offset, scrollY: scroll};
   },
 
-  colRects(target, rects) {
+  colRects(target, rects, gutterSize = 2.5) {
     const tgtRect = target.getBoundingClientRect();
-    const range = 2 * parseInt(target.style.fontSize);
+    const charWidth = tgtRect.width / target.innerText.length;
+    const range = gutterSize * charWidth;
     let {left, right} = tgtRect;
     let nbrs = [tgtRect];
     let addRects;
