@@ -10,6 +10,15 @@
 
 ![Screenshot of the reader mode toolbar](grabs/reader-toolbar.png)
 
+### Smart Zoom with Hidden Toolbar
+
+![PDF in sepia theme, with hidden toolbar and zoomed column of text](grabs/smart-zoom.png)
+_Also showing Original Link popup button._
+
+### Smart Zoom on Mobile
+
+![PDF in dark theme, in a narrow mobile screen, demoing smart zoom](grabs/smart-zoom-mobile.gif)
+
 ## Themes
 
 ### Nord

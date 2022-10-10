@@ -7,6 +7,9 @@
 change the PDF's colors) on top, packaged as an extension for Firefox. It
 replaces the built-in PDF.js viewer as the default PDF viewer application.
 
+It also adds some other features like Smart Zoom text and Show/Hide toolbar to
+optimize space and assist reading, especially on smaller devices.
+
 Here is the demo PDF rendered in *Solarized Light* theme:
 
 ![Screenshot of doqment running in Firefox](docs/grabs/solarized-light.png)
