@@ -24,13 +24,14 @@ const Doqment = {
 
   load() {
     this.config = this.getReaderConfig();
-    document.addEventListener("keydown", this.handleShortcut.bind(this));
     /* Auto-hide toolbar by default on touch devices */
     if (window.matchMedia("only screen and (hover: none)").matches) {
       this.options.autoToolbar = true;
     }
-    this.config.viewer.onscroll = this.toggleToolbar.bind(this);
-    this.config.viewer.ondblclick = this.toggleSmartZoom.bind(this);
+    const {viewer} = this.config;
+    viewer.addEventListener("scroll", this.toggleToolbar.bind(this));
+    viewer.addEventListener("dblclick", this.toggleSmartZoom.bind(this));
+    document.addEventListener("keydown", this.handleShortcut.bind(this));
     const app = window.PDFViewerApplication;
     const registerMonitor = () => {
       app.initializedPromise.then(() => {
@@ -77,9 +78,12 @@ const Doqment = {
   },
 
   handleShortcut(e) {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+    const tag = e.target.tagName;
+    const modifier = e.ctrlKey || e.metaKey || e.altKey;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+        e.target.isContentEditable || modifier)
       return;
-    if (e.code === "F3") {
+    if (e.code === "F3" && !e.shiftKey) {
       this.config.viewerClassList.toggle("toolbarHidden");
       e.preventDefault();
     } else if (e.key === "z" || e.key === "Z") {
@@ -90,7 +94,8 @@ const Doqment = {
   /* Smart zoom */
   toggleSmartZoom(e) {
     const pdfViewer = window.PDFViewerApplication.pdfViewer;
-    if (!pdfViewer.pagesCount || pdfViewer.isInPresentationMode)
+    if (!pdfViewer.pagesCount || pdfViewer.isInPresentationMode ||
+        pdfViewer.annotationEditorMode > 0)
       return;
     if (e.detail > 0 && !("ontouchstart" in window))    /* not a double tap */
       return;
