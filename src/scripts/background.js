@@ -19,8 +19,8 @@ browser.browserAction.onClicked.addListener(newViewer);
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
-const messageUrl = getViewerURL("/pages/Retry.pdf");
-const splashUrl = getViewerURL("/pages/Open.pdf");
+const messageUrl = getViewerURL("/pages/Try Again");
+const splashUrl = getViewerURL("/pages/Open File");
 
 function redirect(details) {
   if (isPdfResp(details))

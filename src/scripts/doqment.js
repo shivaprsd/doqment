@@ -35,10 +35,12 @@ const Doqment = {
     const app = window.PDFViewerApplication;
     const registerMonitor = () => {
       app.initializedPromise.then(() => {
-        /* Set base URL of PDF's links to the original URL */
-        app.eventBus.on("documentinit", () => {
-          app.pdfLinkService.baseUrl = app.baseUrl;
-        });
+        /* In Firefox, set base URL of PDF's links to the original URL */
+        if (window.location.protocol === "moz-extension:") {
+          app.eventBus.on("documentinit", () => {
+            app.pdfLinkService.baseUrl = app.baseUrl;
+          });
+        }
         app.eventBus.on("resize", this.resetZoomStatus.bind(this));
         app.eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
       });

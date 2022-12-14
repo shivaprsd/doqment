@@ -1,6 +1,6 @@
 /* Rebranding */
 document.title = "doqment PDF Reader";
-const favIcon = linkIcon("/images/favicon.png");
+const favIcon = linkIcon("/images/icon32.png");
 
 /* Display host website favicon (if available) */
 const pdfUrl = getPdfUrl();
