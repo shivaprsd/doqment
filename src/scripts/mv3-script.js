@@ -14,3 +14,11 @@ function getPdfUrl() {
   const query = window.location.search.substring(1);
   return new URLSearchParams(query).get("file");
 }
+
+/* Make Solarized the pre-selected color scheme */
+if (!localStorage.getItem("doqment.init")) {
+  const pref = JSON.stringify({ scheme: 3 });
+  localStorage.setItem("doq.preferences.light", pref);
+  localStorage.setItem("doq.preferences.dark", pref);
+  localStorage.setItem("doqment.init", "true");
+}

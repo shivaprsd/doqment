@@ -8,3 +8,11 @@ doq/docs/*
 doq/package.json
 *VERSION
 *.DS_Store
+
+manifest-v2.json
+images/*.svg
+pages/Try Again
+pages/popup.*
+scripts/popup.js
+scripts/background.js
+scripts/page-script.js
