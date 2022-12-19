@@ -1,0 +1,79 @@
+# Automatically convert to Safari Extension, build the Xcode project and save the app
+# Adapted from => https://github.com/bacongravy/mac-app-devops-demo
+name: safari_build
+
+on:
+  push:
+    branches:
+      - safari
+
+jobs:
+  safari_build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Convert to Safari extension and store project directory location
+        run: |
+          cat .zipexclude | xargs -I % find . -path % -delete
+          xcrun safari-web-extension-converter --macos-only --no-open ./src >> .xcode_info
+          echo "DIR_NAME=$(sed -n 's/^App Name: //p' .xcode_info)" >> $GITHUB_ENV
+
+      - name: Find first scheme of default project
+        run: |
+          cd "$DIR_NAME"
+          echo "SCHEME=$(xcodebuild -list -json | jq -r '.project.schemes[0]')" >> $GITHUB_ENV
+
+      - name: Set environment variables from project settings
+        run: |
+          cd "$DIR_NAME"
+          function set-env-from-proj {
+            echo "$1=$(xcodebuild -scheme "$SCHEME" -showBuildSettings | grep " $1 " | sed "s/[ ]*$1 = //")" >> $GITHUB_ENV
+          }
+          set-env-from-proj FULL_PRODUCT_NAME
+          set-env-from-proj INSTALL_PATH
+          set-env-from-proj PRODUCT_MODULE_NAME
+          set-env-from-proj PRODUCT_NAME
+
+      - name: Import signing certificate into keychain
+        run: |
+          KEYCHAIN_FILE=default.keychain
+          KEYCHAIN_PASSWORD=myvoiceismypassport
+          security create-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+          security default-keychain -s $KEYCHAIN_FILE
+          security unlock-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+          security import <(echo $SIGNING_CERTIFICATE_P12_DATA | base64 --decode) \
+                          -f pkcs12 \
+                          -k $KEYCHAIN_FILE \
+                          -P $SIGNING_CERTIFICATE_PASSWORD \
+                          -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+        env:
+          SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+
+      - name: Build and install app
+        shell: bash --noprofile --norc -eo pipefail {0}
+        run: |
+          cd "$DIR_NAME"
+          xcodebuild -scheme "$SCHEME" install DSTROOT=build/root \
+                     DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM_ID }} \
+                     CODE_SIGN_IDENTITY="Apple Development" | xcpretty
+
+      - name: Package app
+        run: |
+          cd "$DIR_NAME"
+          hdiutil create \
+                  -fs HFS+ \
+                  -srcfolder "build/root/$INSTALL_PATH/$FULL_PRODUCT_NAME" \
+                  -volname "$PRODUCT_NAME" "build/$PRODUCT_MODULE_NAME.dmg"
+
+      - name: Upload app
+        uses: actions/upload-artifact@v3
+        with:
+          name: safari-ext-app
+          path: ${{ env.DIR_NAME }}/build/${{ env.PRODUCT_MODULE_NAME }}.dmg

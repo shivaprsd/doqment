@@ -10,7 +10,7 @@ chrome.runtime.onMessage.addListener(respond);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const extProto = new URL(baseUrl).protocol;
-const messageUrl = getViewerURL("/pages/Access Denied");
+const messageUrl = getViewerURL("/pages/Try Again");
 const splashUrl = getViewerURL("/pages/Open File");
 const autoOpener = "scripts/mv3-content.js";
 
@@ -27,6 +27,7 @@ function createMenus() {
   };
   createMenu("open-link", "Open in do&qment", ["link", "frame"]);
   createMenu("copy-url", "Copy original link to PDF", ["action"], {
+    visible: false,
     documentUrlPatterns: [baseUrl + "*"]
   });
   createMenu("allow-all", "Always allow access to sites", ["action"], {
@@ -118,7 +119,7 @@ function resetMenus(permit) {
 /* Open current URL in a new viewer tab, if it is a PDF;
  * otherwise open a blank viewer with the splash screen */
 async function newViewer(tab) {
-  const url = tab.url;
+  const url = tab.url || baseUrl;
   let viewerUrl = splashUrl;
   switch (new URL(url).protocol) {
     case "chrome:":

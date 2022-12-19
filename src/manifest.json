@@ -1,1 +1,47 @@
-manifest-v2.json
+{
+  "manifest_version": 3,
+  "version": "0.7",
+
+  "name": "doqment PDF Reader",
+  "short_name": "doqment",
+  "description": "Mozilla's HTML5 PDF Viewer with Reader-mode add-on.",
+  "author": "Shiva Prasad",
+  "homepage_url": "https://github.com/shivaprsd/doqment",
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+
+  "permissions": ["activeTab", "contextMenus", "scripting", "clipboardWrite"],
+  "optional_host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "scripts/mv3-worker.js"
+  },
+  "options_ui": {
+    "page": "pages/options.html"
+  },
+  "web_accessible_resources": [{
+    "resources": ["pdfjs/web/viewer.html"],
+    "matches": ["<all_urls>"]
+  }],
+
+  "action": {
+    "default_icon": {
+      "16": "images/icon16.png",
+      "24": "images/icon24.png",
+      "32": "images/icon32.png"
+    },
+    "default_title": "Open in doqment"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "mac": "MacCtrl+Q",
+        "default": "Alt+Q"
+      },
+      "description": "Open in doqment"
+    }
+  }
+}
