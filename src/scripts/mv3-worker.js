@@ -4,6 +4,7 @@
  */
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
+chrome.permissions.onRemoved.addListener(uncheckMenu);
 chrome.action.onClicked.addListener(newViewer);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
@@ -23,19 +24,44 @@ function createMenus() {
     contexts: ["action"],
     documentUrlPatterns: [baseUrl + "*"]
   });
+  chrome.contextMenus.create({
+    id: "allow-all",
+    type: "checkbox",
+    title: "Always allow access to links",
+    contexts: ["action"],
+  });
 }
 
-function handleClick(info, tab) {
-  switch (info.menuItemId) {
+async function handleClick(info, tab) {
+  const menuId = info.menuItemId;
+  switch (menuId) {
     case "open-link":
-      const viewerUrl = getViewerURL(info.linkUrl);
-      chrome.tabs.create({ url: viewerUrl });
+      const url = info.linkUrl;
+      if (await chrome.permissions.request({ origins: [url] })) {
+        const viewerUrl = getViewerURL(url);
+        chrome.tabs.create({ url: viewerUrl });
+      }
+      break;
+    case "allow-all":
+      const permit = { origins: ["<all_urls>"] };
+      if (info.checked) {
+        if (!await chrome.permissions.request(permit))
+          uncheckMenu(permit);
+      } else {
+        chrome.permissions.remove(permit);
+      }
       break;
     case "copy-url":
       if (tab.url.startsWith(baseUrl)) {
         const message = { action: "copyPdfURL" };
         chrome.tabs.sendMessage(tab.id, message);
       }
+  }
+}
+
+function uncheckMenu(permit) {
+  if (permit.origins.includes("<all_urls>")) {
+    chrome.contextMenus.update("allow-all", { checked: false });
   }
 }
 

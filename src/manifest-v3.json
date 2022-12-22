@@ -15,7 +15,7 @@
   },
 
   "permissions": ["activeTab", "contextMenus"],
-  "host_permissions": ["<all_urls>"],
+  "optional_host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "scripts/mv3-worker.js"
   },
