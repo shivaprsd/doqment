@@ -8,3 +8,5 @@ doq/docs/*
 doq/package.json
 *VERSION
 *.DS_Store
+
+manifest-v?.json
