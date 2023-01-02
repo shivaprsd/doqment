@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.1",
+  "version": "0.2.1",
+  "minimum_chrome_version": "102",
 
   "name": "doqment PDF Reader",
   "short_name": "doqment",
@@ -15,7 +16,7 @@
   },
 
   "permissions": ["activeTab", "contextMenus"],
-  "host_permissions": ["<all_urls>"],
+  "optional_host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "scripts/mv3-worker.js"
   },

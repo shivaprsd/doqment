@@ -9,7 +9,7 @@ doq/package.json
 *VERSION
 *.DS_Store
 
-manifest-v2.json
+manifest-v?.json
 images/*.svg
 pages/Try Again
 pages/popup.*
