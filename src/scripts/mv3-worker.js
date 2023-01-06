@@ -8,6 +8,7 @@ chrome.permissions.onRemoved.addListener(uncheckMenu);
 chrome.action.onClicked.addListener(newViewer);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
+const extProto = new URL(baseUrl).protocol;
 const messageUrl = getViewerURL("/pages/Access Denied");
 const splashUrl = getViewerURL("/pages/Open File");
 
@@ -68,15 +69,23 @@ function uncheckMenu(permit) {
 async function newViewer(tab) {
   const url = tab.url;
   let viewerUrl;
-  if (url.startsWith(baseUrl) || url.startsWith("chrome://")) {
-    viewerUrl = splashUrl;
-  } else if (url.startsWith("file://")) {
-    if (await chrome.extension.isAllowedFileSchemeAccess())
+  switch (new URL(url).protocol) {
+    case "chrome:":
+    case "edge:":
+    case "opera:":
+    case "brave:":
+    case "about:":
+    case extProto:
+      viewerUrl = splashUrl;
+      break;
+    case "file:":
+      if (await chrome.extension.isAllowedFileSchemeAccess())
+        viewerUrl = getViewerURL(url);
+      else
+        viewerUrl = messageUrl;
+      break;
+    default:
       viewerUrl = getViewerURL(url);
-    else
-      viewerUrl = messageUrl;
-  } else {
-    viewerUrl = getViewerURL(url);
   }
   chrome.tabs.create({ url: viewerUrl });
 }
