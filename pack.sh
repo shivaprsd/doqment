@@ -9,7 +9,7 @@ fi
 ln -srf "src/manifest-${variant#?}.json" src/manifest.json
 
 version=$(awk -F: '/"version"/ {print $2}' src/manifest.json | tr -d ' ,"')
-target=../dist/doqment-v$version.zip
+target=../dist/doqment-v$version-$variant.zip
 
 mkdir -p dist && cd src || exit
 git submodule update --init

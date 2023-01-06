@@ -79,6 +79,8 @@ async function newViewer(tab) {
       viewerUrl = splashUrl;
       break;
     case "file:":
+      // Work around Chromium bug: activeTab insufficient for file: URL access
+      chrome.permissions.request({ origins: [url] }).catch(r => {});
       if (await chrome.extension.isAllowedFileSchemeAccess())
         viewerUrl = getViewerURL(url);
       else
