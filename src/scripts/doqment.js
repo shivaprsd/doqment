@@ -50,10 +50,6 @@ const Doqment = {
     } else {
       document.addEventListener("webviewerloaded", registerMonitor.bind(this));
     }
-    /* FIXME: temporary, experimental */
-    const options = window.PDFViewerApplicationOptions;
-    options.set("annotationEditorMode", 0);
-    options.set("disablePreferences", 1);
   },
 
   toggleToolbar() {
@@ -143,7 +139,7 @@ const Doqment = {
       return (r.top > top - range) && (r.bottom < bottom + range);
     }
     /* Get non-empty text rects around target in the page */
-    const {textDivs, textLayerDiv} = page.textLayer;
+    const {textDivs, div: textLayerDiv} = page.textLayer;
     const texts = textDivs.filter(e => e.textContent.trim());
     let textRects = texts.map(e => e.getBoundingClientRect());
     if (texts.includes(target))
