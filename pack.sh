@@ -6,7 +6,7 @@ if [ "$variant" != mv2 ] && [ "$variant" != mv3 ]; then
 	echo "Unknown target: $variant"
 	exit
 fi
-ln -srf "src/manifest-${variant#?}.json" src/manifest.json
+ln -sf "manifest-${variant#?}.json" src/manifest.json
 
 version=$(awk -F: '/"version"/ {print $2}' src/manifest.json | tr -d ' ,"')
 target=../dist/doqment-v$version-$variant.zip

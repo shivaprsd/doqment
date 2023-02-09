@@ -1,10 +1,10 @@
 {
   "name": "doqment",
-  "version": "0.3",
+  "version": "0.4",
   "description": "Mozilla's HTML5 PDF Viewer with Reader-mode add-on.",
   "homepage": "https://github.com/shivaprsd/doqment",
   "repository": "github:shivaprsd/doqment",
-  "keywords": [ "doq", "pdf.js", "browser extension", "firefox" ],
+  "keywords": [ "doq", "pdf.js", "browser extension", "firefox", "chromium" ],
   "license": "MIT",
   "author": "Shiva Prasad <shivapv@pm.me>",
   "contributors": [],
