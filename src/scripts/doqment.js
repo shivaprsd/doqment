@@ -41,6 +41,7 @@ const Doqment = {
             app.pdfLinkService.baseUrl = app.baseUrl;
           });
         }
+        app.eventBus.on("documenterror", this.handleError.bind(this));
         app.eventBus.on("resize", this.resetZoomStatus.bind(this));
         app.eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
       });
@@ -87,6 +88,13 @@ const Doqment = {
     } else if (e.key === "z" || e.key === "Z") {
       this.toggleSmartZoom(e);
     }
+  },
+
+  handleError(details) {
+    const app = window.PDFViewerApplication;
+    window.alert(details.message);
+    app.loadingBar?.hide();
+    app.close();
   },
 
   /* Smart zoom */

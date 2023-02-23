@@ -1,6 +1,6 @@
 /**
  * Add a context menu to open links (to PDF) in the extension
- * We won't check the link and leave error handling to PDF.js
+ * We won't check the link and leave error handling to viewer
  */
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
@@ -66,9 +66,11 @@ function uncheckMenu(permit) {
   }
 }
 
+/* Open current URL in a new viewer tab, if it is a PDF;
+ * otherwise open a blank viewer with the splash screen */
 async function newViewer(tab) {
   const url = tab.url;
-  let viewerUrl;
+  let viewerUrl = splashUrl;
   switch (new URL(url).protocol) {
     case "chrome:":
     case "edge:":
@@ -76,20 +78,34 @@ async function newViewer(tab) {
     case "brave:":
     case "about:":
     case extProto:
-      viewerUrl = splashUrl;
       break;
     case "file:":
-      // Work around Chromium bug: activeTab insufficient for file: URL access
+      /* Work around Chromium bug: activeTab insufficient for file: URL access */
       chrome.permissions.request({ origins: [url] }).catch(r => {});
-      if (await chrome.extension.isAllowedFileSchemeAccess())
-        viewerUrl = getViewerURL(url);
-      else
+      if (!await chrome.extension.isAllowedFileSchemeAccess()) {
         viewerUrl = messageUrl;
-      break;
+        break;
+      }
+      /* else fall through */
     default:
-      viewerUrl = getViewerURL(url);
+      if (await isPdfTab(tab))
+        viewerUrl = getViewerURL(url);
   }
   chrome.tabs.create({ url: viewerUrl });
+}
+
+/* Check if the document MIME type is PDF in given tab */
+async function isPdfTab(tab) {
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => document.contentType
+  });
+  if (results) {
+    const {frameId, result} = results[0];
+    if (frameId === 0 && result?.includes("application/pdf"))
+      return true;
+  }
+  return false;
 }
 
 function getViewerURL(url) {
