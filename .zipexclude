@@ -1,9 +1,11 @@
 *.js.map
-*web/debugger.js
+*web/debugger.*
 *web/*.pdf
 *.git*
 doq/*.md
 doq/*.txt
+doq/lib/*
+doq/tests/*
 doq/docs/*
 doq/package.json
 *VERSION
