@@ -20,6 +20,10 @@
   "background": {
     "service_worker": "scripts/mv3-worker.js"
   },
+  "web_accessible_resources": [{
+    "resources": ["pdfjs/web/viewer.html"],
+    "matches": ["<all_urls>"]
+  }],
 
   "action": {
     "default_icon": {

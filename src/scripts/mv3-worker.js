@@ -12,13 +12,7 @@ const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const extProto = new URL(baseUrl).protocol;
 const messageUrl = getViewerURL("/pages/Access Denied");
 const splashUrl = getViewerURL("/pages/Open File");
-const autoOpener = {
-  id: "auto-open",
-  js: ["scripts/mv3-content.js"],
-  runAt: "document_start",
-  matches: ["<all_urls>"],
-  allFrames: true
-};
+const autoOpener = "scripts/mv3-content.js";
 
 function getViewerURL(url) {
   const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
@@ -31,11 +25,11 @@ function createMenus() {
   const createMenu = (id, title, contexts, extras) => {
     chrome.contextMenus.create({ id, title, contexts, ...extras });
   };
-  createMenu("open-link", "Open in do&qment", ["link"]);
+  createMenu("open-link", "Open in do&qment", ["link", "frame"]);
   createMenu("copy-url", "Copy original link to PDF", ["action"], {
     documentUrlPatterns: [baseUrl + "*"]
   });
-  createMenu("allow-all", "Always allow access to links", ["action"], {
+  createMenu("allow-all", "Always allow access to sites", ["action"], {
     type: "checkbox"
   });
   createMenu("make-default", "Make doqment the default viewer", ["action"], {
@@ -48,36 +42,64 @@ async function handleClick(info, tab) {
   const menuId = info.menuItemId;
   switch (menuId) {
     case "open-link":
-      const url = info.linkUrl;
-      if (await chrome.permissions.request({ origins: [url] })) {
-        const viewerUrl = getViewerURL(url);
-        chrome.tabs.create({ url: viewerUrl });
-      }
+      const url = info.linkUrl || info.frameUrl;
+      const tabId = (tab.id < 0) ? null : tab.id;
+      await openLink(url, tabId);
       break;
     case "allow-all":
-      if (info.checked) {
-        if (!await chrome.permissions.request({ origins: ["<all_urls>"] }))
-          updateMenu(menuId, { checked: false });
-        else
-          updateMenu("make-default", { enabled: true });
-      } else {
-        /* Users have to manually revoke site access via settings;
-         * otherwise, no prompt is shown for future requests */
-        updateMenu(menuId, { checked: true });
-      }
+      await requestAccess(menuId, info.checked);
       break;
     case "make-default":
-      if (info.checked) {
-        chrome.scripting.registerContentScripts([autoOpener]);
-      } else {
-        chrome.scripting.unregisterContentScripts({ ids: ["auto-open"] });
-      }
+      toggleAutoOpen(info.checked);
       break;
     case "copy-url":
       if (tab.url.startsWith(baseUrl)) {
         const message = { action: "copyPdfURL" };
         chrome.tabs.sendMessage(tab.id, message);
       }
+  }
+}
+
+async function openLink(url, tabId) {
+  let viewerUrl;
+  if (url.startsWith(baseUrl)) {
+    viewerUrl = url;
+  } else {
+    const permit = { origins: [url] };
+    if (!await chrome.permissions.request(permit)) {
+      return;
+    }
+    viewerUrl = getViewerURL(url);
+  }
+  chrome.tabs.create({ url: viewerUrl, openerTabId: tabId });
+}
+
+async function requestAccess(menuId, allow) {
+  if (allow) {
+    const permit = { origins: ["<all_urls>"] };
+    if (!await chrome.permissions.request(permit)) {
+      updateMenu(menuId, { checked: false });
+    } else {
+      updateMenu("make-default", { enabled: true });
+    }
+  } else {
+    /* Users have to manually revoke site access via settings;
+     * otherwise, no prompt is shown for future requests */
+    updateMenu(menuId, { checked: true });
+  }
+}
+
+function toggleAutoOpen(enable) {
+  if (enable) {
+    chrome.scripting.registerContentScripts([{
+      id: "auto-open",
+      js: [autoOpener],
+      runAt: "document_start",
+      matches: ["<all_urls>"],
+      allFrames: true
+    }]);
+  } else {
+    chrome.scripting.unregisterContentScripts({ ids: ["auto-open"] });
   }
 }
 
@@ -118,7 +140,7 @@ async function newViewer(tab) {
       if (await isPdfTab(tab))
         viewerUrl = getViewerURL(url);
   }
-  chrome.tabs.create({ url: viewerUrl });
+  chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
 /* Check if the document MIME type is PDF in given tab */
