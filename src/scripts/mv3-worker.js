@@ -4,32 +4,43 @@
  */
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
-chrome.permissions.onRemoved.addListener(uncheckMenu);
+chrome.permissions.onRemoved.addListener(resetMenus);
 chrome.action.onClicked.addListener(newViewer);
+chrome.runtime.onMessage.addListener(respond);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const extProto = new URL(baseUrl).protocol;
 const messageUrl = getViewerURL("/pages/Access Denied");
 const splashUrl = getViewerURL("/pages/Open File");
+const autoOpener = {
+  id: "auto-open",
+  js: ["scripts/mv3-content.js"],
+  runAt: "document_start",
+  matches: ["<all_urls>"],
+  allFrames: true
+};
+
+function getViewerURL(url) {
+  const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
+  url = url.split("#", 2).map(encodeFirst).join("#");
+  return `${baseUrl}?file=${url}`;
+}
 
 /* Event handlers */
 function createMenus() {
-  chrome.contextMenus.create({
-    id: "open-link",
-    title: "Open in do&qment",
-    contexts: ["link"]
-  });
-  chrome.contextMenus.create({
-    id: "copy-url",
-    title: "Copy original link to PDF",
-    contexts: ["action"],
+  const createMenu = (id, title, contexts, extras) => {
+    chrome.contextMenus.create({ id, title, contexts, ...extras });
+  };
+  createMenu("open-link", "Open in do&qment", ["link"]);
+  createMenu("copy-url", "Copy original link to PDF", ["action"], {
     documentUrlPatterns: [baseUrl + "*"]
   });
-  chrome.contextMenus.create({
-    id: "allow-all",
+  createMenu("allow-all", "Always allow access to links", ["action"], {
+    type: "checkbox"
+  });
+  createMenu("make-default", "Make doqment the default viewer", ["action"], {
     type: "checkbox",
-    title: "Always allow access to links",
-    contexts: ["action"],
+    enabled: false
   });
 }
 
@@ -44,12 +55,22 @@ async function handleClick(info, tab) {
       }
       break;
     case "allow-all":
-      const permit = { origins: ["<all_urls>"] };
       if (info.checked) {
-        if (!await chrome.permissions.request(permit))
-          uncheckMenu(permit);
+        if (!await chrome.permissions.request({ origins: ["<all_urls>"] }))
+          updateMenu(menuId, { checked: false });
+        else
+          updateMenu("make-default", { enabled: true });
       } else {
-        chrome.permissions.remove(permit);
+        /* Users have to manually revoke site access via settings;
+         * otherwise, no prompt is shown for future requests */
+        updateMenu(menuId, { checked: true });
+      }
+      break;
+    case "make-default":
+      if (info.checked) {
+        chrome.scripting.registerContentScripts([autoOpener]);
+      } else {
+        chrome.scripting.unregisterContentScripts({ ids: ["auto-open"] });
       }
       break;
     case "copy-url":
@@ -60,9 +81,15 @@ async function handleClick(info, tab) {
   }
 }
 
-function uncheckMenu(permit) {
+function updateMenu(menuId, params) {
+  chrome.contextMenus.update(menuId, params);
+}
+
+function resetMenus(permit) {
   if (permit.origins.includes("<all_urls>")) {
-    chrome.contextMenus.update("allow-all", { checked: false });
+    updateMenu("allow-all", { checked: false });
+    updateMenu("make-default", { checked: false, enabled: false });
+    chrome.scripting.unregisterContentScripts();
   }
 }
 
@@ -108,8 +135,7 @@ async function isPdfTab(tab) {
   return false;
 }
 
-function getViewerURL(url) {
-  const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
-  url = url.split("#", 2).map(encodeFirst).join("#");
-  return `${baseUrl}?file=${url}`;
+function respond(request, sender, sendResponse) {
+  if (request.action === "getViewerURL")
+    sendResponse({ url: getViewerURL(request.body) });
 }
