@@ -23,7 +23,7 @@ const messageUrl = getViewerURL("/pages/Try Again");
 const splashUrl = getViewerURL("/pages/Open File");
 
 function redirect(details) {
-  if (isPdfResp(details))
+  if (isPdfResp(details) && !shouldDownload(details))
     return { redirectUrl: getViewerURL(details.url) };
 }
 function loadViewer(details) {
@@ -58,6 +58,17 @@ function isPdfResp(details) {
         const cd = getHeader(details.responseHeaders, "content-disposition");
         return /\.pdf(['"]|$)/i.test(cd);
     }
+  }
+  return false;
+}
+/* Check if the PDF should actually be downloaded; sites like Google Docs use
+ * a hidden <iframe> to download docs as PDF */
+function shouldDownload(details) {
+  if (details.url.includes("pdfjs.action=download"))
+    return true;
+  if (details.type !== "main_frame") {
+    const cd = getHeader(details.responseHeaders, "content-disposition");
+    return /^attachment/i.test(cd);
   }
   return false;
 }
