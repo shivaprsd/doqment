@@ -20,6 +20,9 @@
   "background": {
     "service_worker": "scripts/mv3-worker.js"
   },
+  "options_ui": {
+    "page": "pages/options.html"
+  },
   "web_accessible_resources": [{
     "resources": ["pdfjs/web/viewer.html"],
     "matches": ["<all_urls>"]

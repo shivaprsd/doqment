@@ -1,3 +1,7 @@
+if (typeof browser === "undefined") {
+  var browser = chrome;
+  document.body.classList.add("chrome");
+}
 const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
 const pdfjsOptions = document.getElementById("pdfjsOptions");
 const moreOptions = document.getElementById("moreOptions").content;
@@ -32,7 +36,7 @@ async function render(schema, options, moreOptions, updateOption) {
 }
 
 function renderOption(key, property) {
-  const {title, description} = property;
+  const {title, description, type} = property;
   const option = document.getElementById("option").content.cloneNode(true);
 
   option.querySelector("span").textContent = title || key;
@@ -42,6 +46,10 @@ function renderOption(key, property) {
   }
   const control = renderControl(key, property);
   option.querySelector(".header").appendChild(control);
+
+  if (type === "boolean" && browser === chrome) {
+    option.querySelector("div").onclick = toggleOption;
+  }
   return option;
 }
 
@@ -54,6 +62,7 @@ function renderControl(key, property) {
   const control = (nums ? renderSelect : renderInput)(key, property);
   control.id = key;
   control.dataset.type = type;
+  control.classList.add("optionField");
   return control;
 }
 
@@ -122,8 +131,22 @@ async function updatePdfjsOption(option, key, defaultValue) {
   control[attr] = value ?? defaultValue;
 }
 
+function toggleOption(e) {
+  const {target} = e;
+  const tag = target.tagName.toLowerCase();
+
+  if (target === this || tag === "input" || tag === "label") {
+    return;
+  }
+  const input = this.querySelector("input");
+  input.checked = !input.checked;
+  updatePdfjsPref({ target: input });
+}
+
 function toggleMore(e) {
   const {target} = e;
-  target.closest(".more.options").disabled = !target.checked;
+  const moreOptions = target.closest(".more.options");
+  moreOptions.disabled = !target.checked;
+  moreOptions.scrollIntoView(true);
   e.stopPropagation();
 }
