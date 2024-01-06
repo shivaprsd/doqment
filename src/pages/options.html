@@ -7,6 +7,17 @@
   </head>
   <body>
     <div id="pdfjsOptions" class="options"></div>
+    <div>
+      <button id="resetOptions" class="optionField"
+              title="Reset all options to their default value">
+        Restore Defaults
+      </button>
+      <span>Defaults restored.</span>
+      <button id="undoReset" class="optionField" disabled
+              title="Undo reset to defaults">
+        Undo
+      </button>
+    </div>
     <iframe src="/pdfjs/web/viewer.html?file=" hidden></iframe>
 
     <template id="moreOptions">

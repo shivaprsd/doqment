@@ -27,7 +27,7 @@
 
 html, body {
   margin: 0;
-  padding: 0;
+  padding: var(--body-padding, 0);
   font-family: system-ui, -apple-system, Arial, sans-serif;
   font-size: var(--base-font-size);
   line-height: 1.5;
@@ -41,8 +41,8 @@ html, body {
   padding: var(--option-padding);
 }
 
-.options > div:not(:first-of-type) {
-  border-top: 1px solid var(--border-color);
+.options > div:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
 }
 
 .options .header {
@@ -56,18 +56,25 @@ html, body {
   opacity: var(--caption-opacity);
 }
 
-input.optionField {
-  box-sizing: border-box;
-}
-
 .optionField {
   width: var(--field-width, 200px);
   padding: var(--field-padding, 0.45em);
   border-radius: 4px;
   border-color: transparent;
+  font-family: inherit;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   background-color: var(--field-background, ButtonFace);
+}
+
+input.optionField {
+  box-sizing: border-box;
+}
+
+button.optionField {
+  width: auto;
+  padding: var(--button-padding, 0.45em 1em);
 }
 
 .optionField:invalid {
@@ -78,22 +85,24 @@ input.optionField {
 .optionField:hover {
   background-image: linear-gradient(var(--hover-color), var(--hover-color));
 }
+button.optionField:active {
+  background-image: linear-gradient(var(--active-color), var(--active-color));
+}
 
 .more.options {
-  margin: 10px;
+  margin: var(--option-padding);
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 
 .more:disabled {
+  margin-bottom: 0;
+  padding-left: 0;
   border-color: transparent;
 }
 
-.more:disabled > div {
-  display: none;
-}
-
 .more > legend input {
+  margin-left: 0;
   margin-right: 8px;
 }
 
@@ -101,8 +110,23 @@ legend > label > * {
   vertical-align: middle;
 }
 
-legend :checked + span {
-  font-weight: 600;
+legend :checked + span, button.optionField {
+  font-weight: var(--bold-font-weight, 600);
+}
+
+#pdfjsOptions + div {
+  margin: var(--option-padding);
+  margin-top: 0;
+}
+
+#pdfjsOptions + div > span {
+  padding: var(--button-padding);
+  font-style: oblique;
+}
+
+.options:empty + div, .more:disabled > div,
+#resetOptions:disabled, #resetOptions:enabled ~ * {
+  display: none;
 }
 
 
@@ -178,35 +202,51 @@ legend :checked + span {
 /* Chrome-specific styles */
 body.chrome {
   --base-font-size: 13px;
+  --bold-font-weight: 500;
+  --body-padding: 4px 0;
   --option-padding: 12px 20px;
   --caption-opacity: 0.6;
   --field-width: 150px;
   --field-padding: 4px;
+  --button-padding: 5px 12px;
+  background-image: linear-gradient(to bottom, rgb(var(--black), 0.1), transparent 8px);
 }
 
 @media (prefers-color-scheme: dark) {
   body.chrome {
     --main-background: rgb(41, 42, 45);
     --field-background: Canvas;
+    --accent-hover-color: var(--hover-color);
   }
   .chrome .toggle {
     --ripple-opacity: 0.4;
   }
 }
 
-.chrome .options > div:first-child {
-  background: linear-gradient(to bottom, rgb(var(--black), 0.1), transparent 10%);
-  padding-top: 16px;
-}
-
-.chrome :is(select, label, label > *),
+.chrome :is(select, button, label, label > *),
 .chrome .options > div:has(.toggle) > * {
   cursor: pointer;
 }
 
 .chrome .optionField {
   margin-bottom: 1px;
+  font-size: inherit;
   outline-offset: 2px;
+}
+
+.chrome button.optionField {
+  --field-background: transparent;
+  border: 1px solid var(--active-color);
+  color: var(--accent-color);
+}
+
+.chrome button:hover {
+  background-color: var(--accent-hover-color, aliceblue);
+}
+
+.chrome .more > div {
+  --field-width: 130px;
+  --option-padding: 12px 10px;
 }
 
 .chrome :is(.optionField, .toggle > label):is(:hover, :active) {
