@@ -34,6 +34,14 @@ enabled to avoid funny and weird behaviours while opening/downloading PDFs.
 (Go to *Settings* -> *Files and Applications* -> set the *Action* for PDF to
 something other than *Open in Firefox*).
 
+#### Note for Chrome(ium) users:
+
+The extension can open PDF links via the context menu whether the native viewer
+is enabled or disabled. To always open PDFs in the browser without downloading
+them first, keep it enabled. (Go to *Settings* -> *Privacy and security* ->
+*Site Settings* -> *Additional content settings* (under *Content*) ->
+*PDF documents*; or open `chrome://settings/content/pdfDocuments`).
+
 ## Development
 
 **Note:** In Firefox, *doqment* uses Manifest Version 2, while in Chromiums it
