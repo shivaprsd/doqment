@@ -59,8 +59,8 @@ html, body {
 .optionField {
   width: var(--field-width, 200px);
   padding: var(--field-padding, 0.45em);
+  border: var(--field-border, transparent);
   border-radius: 4px;
-  border-color: transparent;
   font-family: inherit;
   white-space: nowrap;
   overflow: hidden;
@@ -78,15 +78,8 @@ button.optionField {
 }
 
 .optionField:invalid {
-  outline: none;
+  outline: var(--invalid-outline, none);
   box-shadow: 0 0 0 2px crimson;
-}
-
-.optionField:hover {
-  background-image: linear-gradient(var(--hover-color), var(--hover-color));
-}
-button.optionField:active {
-  background-image: linear-gradient(var(--active-color), var(--active-color));
 }
 
 .more.options {
@@ -138,7 +131,6 @@ legend :checked + span, button.optionField {
   --thumb-size: calc(var(--height) - 4px);
   --thumb-color: currentColor;
   --groove-length: calc(var(--width) / 2);
-  --toggle-transition: translate 100ms;
   flex-shrink: 0;
 }
 
@@ -155,7 +147,7 @@ legend :checked + span, button.optionField {
   box-sizing: border-box;
   height: var(--height);
   width: var(--width);
-  border: var(--border-size, 1px) solid ButtonBorder;
+  border: var(--border-size, 1px) solid var(--border-color, ButtonBorder);
   border-radius: var(--half-height);
   background-color: var(--toggle-color, ButtonFace);
   z-index: 0;
@@ -164,13 +156,6 @@ legend :checked + span, button.optionField {
 .toggle :checked + label {
   border-color: transparent;
   background-color: var(--accent-color);
-}
-
-.toggle > label:hover {
-  background-image: linear-gradient(var(--hover-color), var(--hover-color));
-}
-.toggle > label:active {
-  background-image: linear-gradient(var(--active-color), var(--active-color));
 }
 
 /* Widget: thumb */
@@ -196,6 +181,13 @@ legend :checked + span, button.optionField {
 .toggle :focus-visible + label {
   outline: var(--toggle-outline, auto);
   outline-offset: 2px;
+}
+
+.toggle > label:hover, .optionField:hover {
+  background-image: linear-gradient(var(--hover-color), var(--hover-color));
+}
+.toggle > label:active, button.optionField:active {
+  background-image: linear-gradient(var(--active-color), var(--active-color));
 }
 
 
@@ -265,7 +257,6 @@ body.chrome {
   --groove-length: calc(var(--width) + 6px - var(--thumb-size));
   --toggle-outline: none;
   --ripple-size: calc(var(--thumb-size) * 2.5);
-  --toggle-transition: translate linear 80ms, background-color linear 80ms;
 }
 
 .chrome .toggle > label {
@@ -281,6 +272,7 @@ body.chrome {
 .chrome .toggle > label::before {
   transform: translate(-3px, -2px);
   box-shadow: 0 1px 3px rgb(var(--black), 0.5);
+  outline: var(--thumb-outline);
 }
 
 .chrome .toggle :checked + label::before {
@@ -307,4 +299,57 @@ body.chrome {
   background-color: inherit;
   opacity: var(--ripple-opacity, 0.4);
   translate: var(--groove-length);
+}
+
+
+/* Accessibility */
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --toggle-transition: translate 100ms;
+  }
+  .chrome {
+    --toggle-transition: translate linear 80ms, background-color linear 80ms;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --main-background: -moz-Dialog;
+    --field-border: 1px solid currentColor;
+    --border-color: ButtonBorder;
+  }
+  .caption {
+    --caption-opacity: 1;
+  }
+  .toggle {
+    --border-color: currentColor;
+    --thumb-opacity: 1;
+  }
+  body.chrome {
+    --main-background: initial;
+    background-image: none;
+    border-top: var(--field-border);
+  }
+  .chrome .toggle {
+    --thumb-outline: 1px solid black;
+    --toggle-outline: 2px solid var(--accent-color);
+    --ripple-size: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --accent-color: currentColor;
+    --invalid-outline: 2px dashed;
+  }
+  .toggle > label:hover {
+    border-color: AccentColor;
+    color: AccentColor;
+  }
+  .toggle :checked + label:hover, .optionField:hover {
+    background-color: AccentColor;
+  }
+  @media not (prefers-color-scheme: dark) {
+    .optionField:hover { color: Canvas; }
+  }
 }
