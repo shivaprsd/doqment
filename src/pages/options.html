@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="options.css">
+    <script src="/scripts/options.js" defer></script>
+  </head>
+  <body>
+    <div id="pdfjsOptions" class="options"></div>
+    <div>
+      <button id="resetOptions" class="optionField"
+              title="Reset all options to their default value">
+        Restore Defaults
+      </button>
+      <span>Defaults restored.</span>
+      <button id="undoReset" class="optionField" disabled
+              title="Undo reset to defaults">
+        Undo
+      </button>
+    </div>
+    <iframe src="/pdfjs/web/viewer.html?file=" hidden></iframe>
+
+    <template id="moreOptions">
+      <fieldset class="more options" disabled>
+        <legend>
+          <label>
+            <input type="checkbox"><span>Show Advanced Options</span>
+          </label>
+        </legend>
+      </fieldset>
+    </template>
+
+    <template id="option">
+      <div>
+        <div class="header"><span></span></div>
+        <div class="caption"></div>
+      </div>
+    </template>
+
+    <template id="toggle">
+      <span class="toggle">
+        <input type="checkbox" id><label for></label>
+      </span>
+  </body>
+</html>

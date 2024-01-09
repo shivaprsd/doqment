@@ -18,6 +18,9 @@
     "scripts": ["scripts/background.js"],
     "persistent": false
   },
+  "options_ui": {
+    "page": "pages/options.html"
+  },
   "web_accessible_resources": ["pdfjs/web/viewer.html"],
 
   "page_action": {
