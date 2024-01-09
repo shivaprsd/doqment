@@ -15,6 +15,9 @@
 ![Firefox window with a popup showing the original PDF URL](grabs/url-popup.png)
 _Also showing smart-zoomed text and hidden toolbar._
 
+### Viewer Preferences
+![Firefox extension settings page showing the viewer options](grabs/preferences.png)
+
 ### Chromium Context Menu
 ![Chromium window showing the context menu on a link to a PDF](grabs/chrome/context-menu.png)
 

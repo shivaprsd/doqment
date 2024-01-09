@@ -1,4 +1,4 @@
-*.js.map
+*.*js.map
 *web/debugger.*
 *web/*.pdf
 *.git*
