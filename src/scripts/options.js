@@ -2,6 +2,11 @@ if (typeof browser === "undefined") {
   var browser = chrome;
   document.body.classList.add("chrome");
 }
+browser.runtime.getPlatformInfo().then(info => {
+  document.body.classList.add(info.os);
+});
+const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
 const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
 const pdfjsOptions = document.getElementById("pdfjsOptions");
 const moreOptions = document.getElementById("moreOptions").content;
@@ -61,7 +66,7 @@ function renderOption(key, property) {
   const control = renderControl(key, property);
   option.querySelector(".header").appendChild(control);
 
-  if (type === "boolean" && browser === chrome) {
+  if (type === "boolean" && (browser === chrome || coarsePointer)) {
     option.querySelector("div").addEventListener("click", toggleOption);
   }
   return option;

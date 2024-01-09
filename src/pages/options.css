@@ -113,7 +113,7 @@ legend :checked + span, button.optionField {
 }
 
 #pdfjsOptions + div > span {
-  padding: var(--button-padding);
+  padding: var(--button-padding, 0.45em);
   font-style: oblique;
 }
 
@@ -299,6 +299,23 @@ body.chrome {
   background-color: inherit;
   opacity: var(--ripple-opacity, 0.4);
   translate: var(--groove-length);
+}
+
+
+/* Mobile-specific styles */
+body.android {
+  --body-padding: 4px 0;
+  --option-padding: 16px 18px;
+  --field-width: 36%;
+}
+
+.android .optionField {
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.android .more > div {
+  --option-padding: 16px 8px;
 }
 
 
