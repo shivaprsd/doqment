@@ -1,3 +1,5 @@
+import { hasCoarsePointer } from "./utils.js";
+
 if (typeof browser === "undefined") {
   window.browser = chrome;
   document.body.classList.add("chrome");
@@ -5,7 +7,6 @@ if (typeof browser === "undefined") {
 browser.runtime.getPlatformInfo().then(info => {
   document.body.classList.add(info.os);
 });
-const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
 const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
 const pdfjsOptions = document.getElementById("pdfjsOptions");
@@ -66,7 +67,7 @@ function renderOption(key, property) {
   const control = renderControl(key, property);
   option.querySelector(".header").appendChild(control);
 
-  if (type === "boolean" && (browser === chrome || coarsePointer)) {
+  if (type === "boolean" && (browser === chrome || hasCoarsePointer())) {
     option.querySelector("div").addEventListener("click", toggleOption);
   }
   return option;

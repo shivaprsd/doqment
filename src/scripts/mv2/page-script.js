@@ -1,4 +1,4 @@
-import { getPdfUrl } from "../utils.js";
+import { getPdfUrl, execOnInit, isTouchScreen } from "../utils.js";
 
 /* Rebranding */
 document.title = "doqment PDF Reader";
@@ -23,3 +23,12 @@ function linkIcon(href) {
   link.href = href;
   return document.head.appendChild(link);
 }
+
+/* Disable the annotation editors by default on mobile */
+execOnInit(async () => {
+  const platform = await browser.runtime.getPlatformInfo();
+  if (platform.os === "android" && isTouchScreen()) {
+    const app = window.PDFViewerApplication;
+    app.preferences.set("annotationEditorMode", -1);
+  }
+});

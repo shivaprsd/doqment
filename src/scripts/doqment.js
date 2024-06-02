@@ -1,4 +1,4 @@
-import { getViewerEventBus } from "./utils.js";
+import { getViewerEventBus, isTouchScreen } from "./utils.js";
 
 const Doqment = {
   config: {},
@@ -27,7 +27,7 @@ const Doqment = {
   load() {
     this.config = this.getReaderConfig();
     /* Auto-hide toolbar by default on touch devices */
-    if (window.matchMedia("only screen and (hover: none)").matches) {
+    if (isTouchScreen()) {
       this.options.autoToolbar = true;
     }
     const {viewer} = this.config;

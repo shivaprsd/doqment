@@ -1,4 +1,4 @@
-import { getPdfUrl } from "../utils.js";
+import { getPdfUrl, execOnInit } from "../utils.js";
 
 /* Copy PDF URL to clipboard */
 chrome.runtime.onMessage.addListener(respond);
@@ -12,9 +12,8 @@ function respond(request) {
 }
 
 /* Make Solarized the pre-selected color scheme */
-if (!localStorage.getItem("doqment.init")) {
+execOnInit(() => {
   const pref = JSON.stringify({ scheme: 3 });
   localStorage.setItem("doq.preferences.light", pref);
   localStorage.setItem("doq.preferences.dark", pref);
-  localStorage.setItem("doqment.init", "true");
-}
+});
