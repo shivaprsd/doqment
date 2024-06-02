@@ -1,3 +1,5 @@
+import { getPdfUrl } from "../utils.js";
+
 /* Copy PDF URL to clipboard */
 chrome.runtime.onMessage.addListener(respond);
 
@@ -7,12 +9,6 @@ function respond(request) {
     if (pdfUrl.startsWith("http"))
       navigator.clipboard.writeText(pdfUrl);
   }
-}
-
-/* Get original URL to PDF from query string */
-function getPdfUrl() {
-  const query = window.location.search.substring(1);
-  return new URLSearchParams(query).get("file");
 }
 
 /* Make Solarized the pre-selected color scheme */

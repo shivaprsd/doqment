@@ -1,5 +1,5 @@
 if (typeof browser === "undefined") {
-  var browser = chrome;
+  window.browser = chrome;
   document.body.classList.add("chrome");
 }
 browser.runtime.getPlatformInfo().then(info => {

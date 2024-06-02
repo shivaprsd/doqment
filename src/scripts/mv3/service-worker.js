@@ -12,7 +12,7 @@ const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const extProto = new URL(baseUrl).protocol;
 const messageUrl = getViewerURL("/pages/Access Denied");
 const splashUrl = getViewerURL("/pages/Open File");
-const autoOpener = "scripts/mv3-content.js";
+const autoOpener = "scripts/mv3/content-script.js";
 
 function getViewerURL(url) {
   const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;

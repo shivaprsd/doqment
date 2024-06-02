@@ -15,7 +15,7 @@
     "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>"
   ],
   "background": {
-    "scripts": ["scripts/background.js"],
+    "scripts": ["scripts/mv2/background.js"],
     "persistent": false
   },
   "options_ui": {

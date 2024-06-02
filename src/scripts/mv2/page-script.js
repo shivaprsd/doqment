@@ -1,3 +1,5 @@
+import { getPdfUrl } from "../utils.js";
+
 /* Rebranding */
 document.title = "doqment PDF Reader";
 const favIcon = linkIcon("/images/icon32.png");
@@ -20,10 +22,4 @@ function linkIcon(href) {
   link.rel = "icon";
   link.href = href;
   return document.head.appendChild(link);
-}
-
-/* Get original URL to PDF from query string */
-function getPdfUrl() {
-  const query = window.location.search.substring(1);
-  return new URLSearchParams(query).get("file");
 }

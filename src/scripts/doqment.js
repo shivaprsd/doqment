@@ -1,3 +1,5 @@
+import { getViewerEventBus } from "./utils.js";
+
 const Doqment = {
   config: {},
   options: { autoToolbar: false },
@@ -33,24 +35,17 @@ const Doqment = {
     viewer.addEventListener("dblclick", this.toggleSmartZoom.bind(this));
     document.addEventListener("keydown", this.handleShortcut.bind(this));
     const app = window.PDFViewerApplication;
-    const registerMonitor = () => {
-      app.initializedPromise.then(() => {
-        /* In Firefox, set base URL of PDF's links to the original URL */
-        if (window.location.protocol === "moz-extension:") {
-          app.eventBus.on("documentinit", () => {
-            app.pdfLinkService.baseUrl = app.baseUrl;
-          });
-        }
-        app.eventBus.on("documenterror", this.handleError.bind(this));
-        app.eventBus.on("resize", this.resetZoomStatus.bind(this));
-        app.eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
-      });
-    };
-    if (app.initializedPromise) {
-      registerMonitor();
-    } else {
-      document.addEventListener("webviewerloaded", registerMonitor.bind(this));
-    }
+    getViewerEventBus(app).then(eventBus => {
+      /* In Firefox, set base URL of PDF's links to the original URL */
+      if (window.location.protocol === "moz-extension:") {
+        eventBus.on("documentinit", () => {
+          app.pdfLinkService.baseUrl = app.baseUrl;
+        });
+      }
+      eventBus.on("documenterror", this.handleError.bind(this));
+      eventBus.on("resize", this.resetZoomStatus.bind(this));
+      eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
+    });
   },
 
   toggleToolbar() {
