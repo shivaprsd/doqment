@@ -4,8 +4,15 @@
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
-.toolbarHidden :is(#mainContainer, #sidebarContainer) {
+.toolbarHidden:not(.auto) :is(#mainContainer, #sidebarContainer) {
+  /* Toolbar height is fixed at 32px, plus a 1px box-shadow  */
   margin-top: -33px;
+}
+/* Auto-hide only in small devices */
+@media screen and (max-height: 384px) {
+  .toolbarHidden.auto :is(#mainContainer, #sidebarContainer) {
+    margin-top: -33px;
+  }
 }
 /* Reduce toolbar clutter in small devices */
 @media screen and (max-width: 435px) {

@@ -49,8 +49,10 @@ const Doqment = {
   },
 
   toggleToolbar() {
-    if (!this.options.autoToolbar)
+    const smallDevice = window.matchMedia("(max-height: 384px)");
+    if (!this.options.autoToolbar || !smallDevice.matches) {
       return;
+    }
     const hideThresh = 50, showThresh = -20;
     const {viewer} = this.config;
     let delta = viewer.scrollTop - this.oldScrollTop;
@@ -60,12 +62,13 @@ const Doqment = {
       this.scrollMark = viewer.scrollTop;
     }
     if (this.scrollMark) {
+      const { viewerClassList } = this.config;
       delta = viewer.scrollTop - this.scrollMark;
       if (delta > hideThresh) {
-        this.config.viewerClassList.add("toolbarHidden");
+        viewerClassList.add("toolbarHidden", "auto");
         this.scrollMark = 0;
       } else if (delta < showThresh) {
-        this.config.viewerClassList.remove("toolbarHidden");
+        viewerClassList.remove("toolbarHidden", "auto");
         this.scrollMark = 0;
       }
     }
@@ -78,7 +81,9 @@ const Doqment = {
         e.target.isContentEditable || modifier)
       return;
     if (e.code === "F3" && !e.shiftKey) {
-      this.config.viewerClassList.toggle("toolbarHidden");
+      const { viewerClassList } = this.config;
+      viewerClassList.toggle("toolbarHidden");
+      viewerClassList.remove("auto");
       e.preventDefault();
     } else if (e.key === "z" || e.key === "Z") {
       this.toggleSmartZoom(e);
