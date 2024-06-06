@@ -9,7 +9,6 @@ chrome.action.onClicked.addListener(newViewer);
 chrome.runtime.onMessage.addListener(respond);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
-const extProto = new URL(baseUrl).protocol;
 const messageUrl = getViewerURL("/pages/Access Denied");
 const splashUrl = getViewerURL("/pages/Open File");
 const autoOpener = "scripts/mv3/content-script.js";
@@ -118,37 +117,27 @@ function resetMenus(permit) {
 /* Open current URL in a new viewer tab, if it is a PDF;
  * otherwise open a blank viewer with the splash screen */
 async function newViewer(tab) {
+  const hasFilesAccess = () => {
+    /* Work around Chromium bug: activeTab insufficient for file: URL access */
+    chrome.permissions.request({ origins: [url] }).catch(r => {});
+    return chrome.extension.isAllowedFileSchemeAccess();
+  };
   const url = tab.url;
   let viewerUrl = splashUrl;
-  switch (new URL(url).protocol) {
-    case "chrome:":
-    case "edge:":
-    case "opera:":
-    case "brave:":
-    case "about:":
-    case extProto:
-      break;
-    case "file:":
-      /* Work around Chromium bug: activeTab insufficient for file: URL access */
-      chrome.permissions.request({ origins: [url] }).catch(r => {});
-      if (!await chrome.extension.isAllowedFileSchemeAccess()) {
-        viewerUrl = messageUrl;
-        break;
-      }
-      /* else fall through */
-    default:
-      if (await isPdfTab(tab))
-        viewerUrl = getViewerURL(url);
+  if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
+    viewerUrl = messageUrl;
+  } else if (await isPdfContent(tab)) {
+    viewerUrl = getViewerURL(url);
   }
   chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
 /* Check if the document MIME type is PDF in given tab */
-async function isPdfTab(tab) {
+async function isPdfContent(tab) {
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: () => document.contentType
-  });
+  }).catch(r => {});
   if (results) {
     const {frameId, result} = results[0];
     if (frameId === 0 && result?.includes("application/pdf"))
