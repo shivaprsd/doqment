@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.7.1",
+  "version": "0.8",
 
   "name": "doqment PDF Reader",
   "short_name": "doqment",
@@ -30,7 +30,7 @@
     "default_popup": "pages/popup.html"
   },
   "browser_action": {
-    "default_icon": "images/button.svg",
+    "default_icon": "images/icon.svg",
     "default_title": "Open PDF Reader in New Tab"
   },
   "commands": {
