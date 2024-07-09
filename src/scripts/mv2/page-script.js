@@ -1,8 +1,8 @@
-import { getPdfUrl, execOnInit, isTouchScreen } from "../utils.js";
+import { getPdfUrl, addLink, execOnInit, isTouchScreen } from "../utils.js";
 
 /* Rebranding */
 document.title = "doqment PDF Reader";
-const favIcon = linkIcon("/images/icon32.png");
+const favIcon = addLink("icon", "/images/icon32.png");
 
 /* Display host website favicon (if available) */
 const pdfUrl = getPdfUrl();
@@ -17,18 +17,21 @@ if (self === top && pdfUrl?.startsWith("http")) {
   });
 }
 
-function linkIcon(href) {
-  const link = document.createElement("link");
-  link.rel = "icon";
-  link.href = href;
-  return document.head.appendChild(link);
+/* Make Firefox the pre-selected color scheme */
+function selectFirefox() {
+  /* scheme = 0 because of the migration code in doq */
+  const pref = JSON.stringify({ scheme: 0 });
+  localStorage.setItem("doq.preferences.light", pref);
+  localStorage.setItem("doq.preferences.dark", pref);
 }
 
 /* Disable the annotation editors by default on mobile */
-execOnInit(async () => {
+async function disableAnnotEditors() {
   const platform = await browser.runtime.getPlatformInfo();
   if (platform.os === "android" && isTouchScreen()) {
     const app = window.PDFViewerApplication;
     app.preferences.set("annotationEditorMode", -1);
   }
-});
+}
+
+execOnInit([selectFirefox, disableAnnotEditors])

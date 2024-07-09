@@ -4,10 +4,16 @@ export function getPdfUrl() {
   return new URLSearchParams(query).get("file");
 }
 
-/* Execute passed function on the first run */
-export function execOnInit(initFunc) {
+export function addLink(rel, href) {
+  const link = document.createElement("link");
+  Object.assign(link, {rel, href})
+  return document.head.appendChild(link);
+}
+
+/* Execute passed functions on the first run */
+export function execOnInit(initFuncs) {
   if (!localStorage.getItem("doqment.init")) {
-    initFunc();
+    initFuncs.forEach(func => func());
     localStorage.setItem("doqment.init", "true");
   }
 }

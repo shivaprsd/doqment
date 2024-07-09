@@ -1,4 +1,4 @@
-import { getViewerEventBus, isTouchScreen } from "./utils.js";
+import { addLink, getViewerEventBus, isTouchScreen } from "./utils.js";
 
 const Doqment = {
   config: {},
@@ -20,7 +20,7 @@ const Doqment = {
   init() {
     let path = (new URL(import.meta.url)).pathname;
     path = path.substring(0, path.lastIndexOf("/") + 1);
-    linkCSS(path + "doqment.css");
+    addLink("stylesheet", path + "doqment.css");
     this.load();
   },
 
@@ -208,13 +208,6 @@ const Doqment = {
       this.config.docStyle.removeProperty("--scroll-snap");
     }
   }
-}
-
-function linkCSS(href) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = href;
-  document.head.appendChild(link);
 }
 
 /* Initialisation */
