@@ -1,4 +1,4 @@
-import { getPdfUrl, addLink, execOnInit, isTouchScreen } from "../utils.js";
+import { getPdfUrl, addLink, execOnEvent, isTouchScreen } from "../utils.js";
 
 /* Rebranding */
 document.title = "doqment PDF Reader";
@@ -34,4 +34,11 @@ async function disableAnnotEditors() {
   }
 }
 
-execOnInit([selectFirefox, disableAnnotEditors])
+/* Disable hardware accelerated rendering of canvas */
+function forceSoftwareRender() {
+  const doqOptions = { softwareRender: true };
+  localStorage.setItem("doq.options", JSON.stringify(doqOptions));
+}
+
+execOnEvent("init", [selectFirefox, disableAnnotEditors])
+execOnEvent("update-0.9", [forceSoftwareRender])
