@@ -10,11 +10,12 @@ export function addLink(rel, href) {
   return document.head.appendChild(link);
 }
 
-/* Execute passed functions on the first run */
-export function execOnInit(initFuncs) {
-  if (!localStorage.getItem("doqment.init")) {
-    initFuncs.forEach(func => func());
-    localStorage.setItem("doqment.init", "true");
+/* Execute passed callbacks on the event marked by {flag} */
+export function execOnEvent(flag, callbacks) {
+  const event = `doqment.${flag}`
+  if (!localStorage.getItem(event)) {
+    callbacks.forEach(func => func());
+    localStorage.setItem(event, "true");
   }
 }
 

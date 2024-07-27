@@ -147,8 +147,8 @@ const Doqment = {
       return (r.top > top - range) && (r.bottom < bottom + range);
     }
     /* Get non-empty text rects around target in the page */
-    const {textDivs, div: textLayerDiv} = page.textLayer;
-    const texts = textDivs.filter(e => e.textContent.trim());
+    const textLayerDiv = page.textLayer.div;
+    const texts = [...textLayerDiv.querySelectorAll("span")];
     let textRects = texts.map(e => e.getBoundingClientRect());
     if (texts.includes(target))
       textRects = this.colRects(target, textRects.filter(nbrRects));
