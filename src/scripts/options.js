@@ -1,5 +1,58 @@
 import { hasCoarsePointer } from "./utils.js";
 
+const DoqPrefs = {
+  defaults: {},
+  store: {},
+  stash: {},
+  init(properties) {
+    for (let key in properties) {
+      this.defaults[key] = properties[key].default;
+    }
+    Object.freeze(this.defaults);
+    this.store = JSON.parse(localStorage.getItem("doq.options")) ?? this.store;
+  },
+  get(key) {
+    return this.store[key] ?? this.defaults[key];
+  },
+  set(key, value) {
+    this.store[key] = value;
+    localStorage.setItem("doq.options", JSON.stringify(this.store));
+  },
+  reset() {
+    this.store = (browser === chrome) ? {} : { softwareRender: true };
+    localStorage.setItem("doq.options", JSON.stringify(this.store));
+  }
+}
+
+const PdfjsPrefs = {
+  store: {},
+  stash: {},
+  init() {
+    this.viewer = document.querySelector("iframe");
+    this.viewerLoad = new Promise(resolve => this.viewer.onload = resolve);
+  },
+  async getApp() {
+    await this.viewerLoad;
+    return this.viewer.contentWindow.PDFViewerApplication;
+  },
+  async get(key) {
+    const pdfjs = await this.getApp();
+    this.store[key] = await pdfjs.preferences.get(key);
+    return this.store[key];
+  },
+  set(key, value) {
+    this.store[key] = value;
+    this.getApp().then(pdfjs => pdfjs.preferences.set(key, value));
+  },
+  async reset() {
+    const pdfjs = await this.getApp();
+    pdfjs.preferences.reset();
+  }
+}
+
+
+/*==== Initialisation and events ===============*/
+
 if (typeof browser === "undefined") {
   window.browser = chrome;
   document.body.classList.add("chrome");
@@ -8,19 +61,26 @@ browser.runtime.getPlatformInfo().then(info => {
   document.body.classList.add(info.os);
 });
 
-const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
+const doqOptions = document.getElementById("doqOptions");
 const pdfjsOptions = document.getElementById("pdfjsOptions");
 const moreOptions = document.getElementById("moreOptions").content;
 const resetOptions = document.getElementById("resetOptions");
 const undoReset = document.getElementById("undoReset");
 
-pdfjsOptions.addEventListener("change", () => {
-  resetOptions.disabled = false;
-  undoReset.disabled = true;
-});
-pdfjsOptions.addEventListener("change", updatePdfjsPref);
+doqOptions.addEventListener("change", e => updatePrefs(DoqPrefs, e.target));
+pdfjsOptions.addEventListener("change", e => updatePrefs(PdfjsPrefs, e.target));
 moreOptions.querySelector("legend").addEventListener("change", toggleMore);
-resetOptions.onclick = undoReset.onclick = restorePdfjsPrefs;
+doqOptions.addEventListener("change", toggleUndo);
+pdfjsOptions.addEventListener("change", toggleUndo);
+resetOptions.onclick = undoReset.onclick = restorePrefs;
+
+const doqSchema = browser.runtime.getURL("doq/addon/options.json");
+const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
+
+fetch(doqSchema).then(resp => resp.json()).then(schema => {
+  DoqPrefs.init(schema.properties);
+  render(DoqPrefs, schema, doqOptions);
+});
 
 fetch(pdfjsSchema).then(resp => resp.json()).then(schema => {
   const themeOption = schema.properties["viewerCssTheme"];
@@ -29,10 +89,14 @@ fetch(pdfjsSchema).then(resp => resp.json()).then(schema => {
   themeOption.description = themeOption.description.replace(".", captionFix);
 
   delete schema.properties["disableTelemetry"];
-  render(schema, pdfjsOptions, moreOptions, updatePdfjsControl);
+  PdfjsPrefs.init();
+  render(PdfjsPrefs, schema, pdfjsOptions, moreOptions);
 });
 
-async function render(schema, options, moreOptions, updateControl) {
+
+/*==== Rendering ===============================*/
+
+async function render(prefs, schema, options, moreOptions) {
   const {properties} = schema;
   let hasMoreOptions = false;
 
@@ -43,7 +107,7 @@ async function render(schema, options, moreOptions, updateControl) {
       continue;
     }
     const option = renderOption(key, properties[key]);
-    await updateControl(option.querySelector("#" + key));
+    await updateControl(prefs, option.querySelector("#" + key));
     if (title) {
       options.appendChild(option);
     } else {
@@ -79,7 +143,7 @@ function renderControl(key, property) {
   if (type === "boolean") {
     return renderToggle(key, default_);
   }
-  const control = (nums ? renderSelect : renderInput)(key, property);
+  const control = (nums ? renderSelect : renderInput)(property);
   control.id = key;
   control.value = default_;
   control.dataset.type = type;
@@ -96,7 +160,7 @@ function renderToggle(key, toggled) {
   return toggle;
 }
 
-function renderInput(key, property) {
+function renderInput(property) {
   const input = document.createElement("input");
   const {type, pattern} = property;
 
@@ -107,7 +171,7 @@ function renderInput(key, property) {
   return input;
 }
 
-function renderSelect(key, property) {
+function renderSelect(property) {
   const select = document.createElement("select");
   const {type, enum: nums, description} = property;
 
@@ -126,19 +190,10 @@ function renderSelect(key, property) {
   return select;
 }
 
-const viewer = document.querySelector("iframe");
-const viewerLoad = new Promise(resolve => viewer.onload = resolve);
-let savedPrefs = {}
 
-async function getPdfjsApp() {
-  await viewerLoad;
-  return viewer.contentWindow.PDFViewerApplication;
-}
+/*==== Event handling ==========================*/
 
-function updatePdfjsPref(e) {
-  const {target} = e;
-  const key = target.id;
-
+function updatePrefs(prefs, target) {
   if (!target.checkValidity()) {
     return;
   }
@@ -146,40 +201,39 @@ function updatePdfjsPref(e) {
   if (target.dataset?.type === "integer") {
     value = Number(value);
   }
-  getPdfjsApp().then(pdfjs => pdfjs.preferences.set(key, value));
-  savedPrefs[key] = value;
+  prefs.set(target.id, value);
 }
 
-async function updatePdfjsControl(control) {
-  const key = control.id;
-  const pdfjs = await getPdfjsApp();
-  const value = await pdfjs.preferences.get(key);
-
+async function updateControl(prefs, control) {
   const attr = (control.type === "checkbox") ? "checked" : "value";
-  savedPrefs[key] = control[attr] = value;
+  control[attr] = await prefs.get(control.id);
 }
-
-let stashedPrefs = {};
 
 /* Restore either default or stashed preferences, as per the event target */
-async function restorePdfjsPrefs() {
-  const reset = this.id === "resetOptions";
-  const pdfjs = await getPdfjsApp();
-
-  if (reset) {
-    Object.assign(stashedPrefs, savedPrefs);
-    await pdfjs.preferences.reset();
-  }
-  for (let key in savedPrefs) {
-    if (!reset) {
-      await pdfjs.preferences.set(key, stashedPrefs[key]);
+async function restorePrefs() {
+  const reset = (this === resetOptions);
+  const restore = async prefs => {
+    if (reset) {
+      Object.assign(prefs.stash, prefs.store);
+      await prefs.reset();
     }
-    updatePdfjsControl(document.getElementById(key));
-  }
-  const other = reset ? undoReset : resetOptions;
-  this.disabled = true;
-  other.disabled = false;
-  other.focus();
+    for (let key in prefs.stash) {
+      if (!reset) {
+        await prefs.set(key, prefs.stash[key]);
+      }
+      updateControl(prefs, document.getElementById(key));
+    }
+  };
+  await restore(DoqPrefs);
+  await restore(PdfjsPrefs);
+  toggleUndo(reset);
+  (reset ? undoReset : resetOptions).focus();
+}
+
+function toggleUndo(e) {
+  const disable = e.target ? true : !e;
+  undoReset.disabled = disable;
+  resetOptions.disabled = !disable;
 }
 
 function toggleOption(e) {

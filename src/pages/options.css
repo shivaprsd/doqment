@@ -37,12 +37,17 @@ html, body {
 
 
 /* Options panel */
-.options > div {
+.options > :is(h3, div) {
   padding: var(--option-padding);
 }
 
-.options > div:not(:last-child) {
+.options > :is(h3, div):not(:last-child) {
   border-bottom: 1px solid var(--border-color);
+}
+
+.options > h3 {
+  margin: 0;
+  padding-bottom: 8px;
 }
 
 .options .header {
