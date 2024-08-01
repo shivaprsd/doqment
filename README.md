@@ -27,6 +27,12 @@ In Firefox, *doqment* replaces the built-in PDF.js viewer as the default PDF
 viewer application. In Chrome(ium), it co-exists with the native viewer, and
 provides a context menu and toolbar button to open PDFs in it instead.
 
+#### Extension options
+
+Preferences for both the PDF.js viewer and *doq* can be configured through the
+extension options page (right click the toolbar icon and choose *Options* or
+*Manage Extension* -> *Preferences*).
+
 #### Note for Firefox users:
 
 It is recommended to disable the built-in viewer while this extension is
