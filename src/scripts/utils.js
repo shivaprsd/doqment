@@ -4,6 +4,15 @@ export function getPdfUrl() {
   return new URLSearchParams(query).get("file");
 }
 
+/* Get URL to the viewer with encoded PDF URL */
+export function getViewerURL(viewerUrl, pdfUrl) {
+  const encodeFirst = (elem, index) => {
+    return !index ? encodeURIComponent(elem) : elem;
+  };
+  pdfUrl = pdfUrl.split("#", 2).map(encodeFirst).join("#");
+  return `${viewerUrl}?file=${pdfUrl}`;
+}
+
 export function addLink(rel, href) {
   const link = document.createElement("link");
   Object.assign(link, {rel, href})

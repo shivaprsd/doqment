@@ -16,6 +16,7 @@
   ],
   "background": {
     "scripts": ["scripts/mv2/background.js"],
+    "type": "module",
     "persistent": false
   },
   "options_ui": {

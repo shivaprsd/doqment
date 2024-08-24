@@ -18,7 +18,8 @@
   "permissions": ["activeTab", "contextMenus", "scripting"],
   "optional_host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "scripts/mv3/service-worker.js"
+    "service_worker": "scripts/mv3/service-worker.js",
+    "type": "module"
   },
   "options_ui": {
     "page": "pages/options.html"

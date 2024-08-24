@@ -2,6 +2,8 @@
  * Add a context menu to open links (to PDF) in the extension
  * We won't check the link and leave error handling to viewer
  */
+import { getViewerURL } from "../utils.js";
+
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
 chrome.permissions.onRemoved.addListener(resetMenus);
@@ -9,15 +11,9 @@ chrome.action.onClicked.addListener(newViewer);
 chrome.runtime.onMessage.addListener(respond);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
-const messageUrl = getViewerURL("/pages/Access Denied");
-const splashUrl = getViewerURL("/pages/Open File");
+const messageUrl = getViewerURL(baseUrl, "/pages/Access Denied");
+const splashUrl = getViewerURL(baseUrl, "/pages/Open File");
 const autoOpener = "scripts/mv3/content-script.js";
-
-function getViewerURL(url) {
-  const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
-  url = url.split("#", 2).map(encodeFirst).join("#");
-  return `${baseUrl}?file=${url}`;
-}
 
 /* Event handlers */
 function createMenus() {
@@ -68,7 +64,7 @@ async function openLink(url, tabId) {
     if (!await chrome.permissions.request(permit)) {
       return;
     }
-    viewerUrl = getViewerURL(url);
+    viewerUrl = getViewerURL(baseUrl, url);
   }
   chrome.tabs.create({ url: viewerUrl, openerTabId: tabId });
 }
@@ -127,7 +123,7 @@ async function newViewer(tab) {
   if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
     viewerUrl = messageUrl;
   } else if (await isPdfContent(tab)) {
-    viewerUrl = getViewerURL(url);
+    viewerUrl = getViewerURL(baseUrl, url);
   }
   chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
@@ -148,5 +144,5 @@ async function isPdfContent(tab) {
 
 function respond(request, sender, sendResponse) {
   if (request.action === "getViewerURL")
-    sendResponse({ url: getViewerURL(request.body) });
+    sendResponse({ url: getViewerURL(baseUrl, request.body) });
 }

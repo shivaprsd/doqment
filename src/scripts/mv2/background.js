@@ -2,6 +2,8 @@
  * Intercept loading of PDF files and redirect them to the add-on
  * Adapted from => [pdf.js]/extensions/chromium/pdfHandler.js
  */
+import { getViewerURL } from "../utils.js";
+
 const pdfSources = {
   urls: ["<all_urls>"],
   types: ["main_frame", "sub_frame", "object"]
@@ -19,12 +21,12 @@ browser.browserAction.onClicked.addListener(newViewer);
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
-const messageUrl = getViewerURL("/pages/Try Again");
-const splashUrl = getViewerURL("/pages/Open File");
+const messageUrl = getViewerURL(baseUrl, "/pages/Try Again");
+const splashUrl = getViewerURL(baseUrl, "/pages/Open File");
 
 function redirect(details) {
   if (isPdfResp(details) && !shouldDownload(details))
-    return { redirectUrl: getViewerURL(details.url) };
+    return { redirectUrl: getViewerURL(baseUrl, details.url) };
 }
 function loadViewer(details) {
   if (!details.frameId)
@@ -37,11 +39,6 @@ function newViewer(_, clickData) {
     browser.windows.create({ type: "popup", url: splashUrl });
   else
     browser.tabs.create({ url: splashUrl });
-}
-function getViewerURL(url) {
-  const encodeFirst = (c, i) => !i && encodeURIComponent(c) || c;
-  url = url.split("#", 2).map(encodeFirst).join("#");
-  return `${baseUrl}?file=${url}`;
 }
 
 /* Determine if response is a PDF by inspecting its MIME type, file extension
