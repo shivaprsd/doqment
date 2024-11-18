@@ -14,6 +14,7 @@ const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const messageUrl = getViewerURL(baseUrl, "/pages/Access Denied");
 const splashUrl = getViewerURL(baseUrl, "/pages/Open File");
 const autoOpener = "scripts/mv3/content-script.js";
+const viewerCSS = "scripts/mv3/viewer.css";
 
 /* Event handlers */
 function createMenus() {
@@ -21,9 +22,6 @@ function createMenus() {
     chrome.contextMenus.create({ id, title, contexts, ...extras });
   };
   createMenu("open-link", "Open in do&qment", ["link", "frame"]);
-  createMenu("copy-url", "Copy original link to PDF", ["action"], {
-    documentUrlPatterns: [baseUrl + "*"]
-  });
   createMenu("allow-all", "Always allow access to sites", ["action"], {
     type: "checkbox"
   });
@@ -47,11 +45,6 @@ async function handleClick(info, tab) {
     case "make-default":
       toggleAutoOpen(info.checked);
       break;
-    case "copy-url":
-      if (tab.url.startsWith(baseUrl)) {
-        const message = { action: "copyPdfURL" };
-        chrome.tabs.sendMessage(tab.id, message);
-      }
   }
 }
 
@@ -66,7 +59,8 @@ async function openLink(url, tabId) {
     }
     viewerUrl = getViewerURL(baseUrl, url);
   }
-  chrome.tabs.create({ url: viewerUrl, openerTabId: tabId });
+  const newTab = await chrome.tabs.create({ url, openerTabId: tabId });
+  loadViewer(viewerUrl, newTab.id);
 }
 
 async function requestAccess(menuId, allow) {
@@ -84,6 +78,8 @@ async function requestAccess(menuId, allow) {
   }
 }
 
+/* Set content script to detect PDFs and send back the URL;
+ * respond by loading the viewer frame in the sender tab */
 function toggleAutoOpen(enable) {
   if (enable) {
     chrome.scripting.registerContentScripts([{
@@ -95,6 +91,17 @@ function toggleAutoOpen(enable) {
     }]);
   } else {
     chrome.scripting.unregisterContentScripts({ ids: ["auto-open"] });
+  }
+}
+
+function respond(request, sender, sendResponse) {
+  if (request.action === "loadViewer") {
+    const viewerUrl = getViewerURL(baseUrl, request.body);
+    if (sender.frameId === 0) {
+      loadViewer(viewerUrl, sender.tab.id);
+    } else {
+      sendResponse({ url: viewerUrl });
+    }
   }
 }
 
@@ -110,7 +117,7 @@ function resetMenus(permit) {
   }
 }
 
-/* Open current URL in a new viewer tab, if it is a PDF;
+/* Open current URL in a viewer frame, if it is a PDF;
  * otherwise open a blank viewer with the splash screen */
 async function newViewer(tab) {
   const hasFilesAccess = () => {
@@ -119,30 +126,46 @@ async function newViewer(tab) {
     return chrome.extension.isAllowedFileSchemeAccess();
   };
   const url = tab.url;
-  let viewerUrl = splashUrl;
+  let viewerUrl;
   if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
     viewerUrl = messageUrl;
-  } else if (await isPdfContent(tab)) {
+  } else if (await isPdfTab(tab.id)) {
     viewerUrl = getViewerURL(baseUrl, url);
   }
-  chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
+
+  if (viewerUrl) {
+    loadViewer(viewerUrl, tab.id);
+  } else {
+    chrome.tabs.create({ url: splashUrl, index: tab.index + 1 });
+  }
+}
+
+/* Load viewer in a full page frame in the given tab */
+function loadViewer(viewerUrl, tabId) {
+  const injectFrame = src => {
+    const frame = document.createElement("iframe");
+    frame.src = src;
+    frame.id = "doqmentViewer";
+    document.body.prepend(frame);
+  };
+  chrome.scripting.executeScript({
+    target: {tabId}, func: injectFrame, args: [viewerUrl]
+  }).then(() => {
+    chrome.scripting.insertCSS({ target: {tabId}, files: [viewerCSS] });
+  });
 }
 
 /* Check if the document MIME type is PDF in given tab */
-async function isPdfContent(tab) {
-  const results = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => document.contentType
-  }).catch(r => {});
+async function isPdfTab(tabId) {
+  const isPdfContent = () => {
+    if (document.contentType?.includes("application/pdf"))
+      return document.getElementById("doqmentViewer") == null;
+  }
+  const details = { target: {tabId}, func: isPdfContent };
+  const results = await chrome.scripting.executeScript(details).catch(r => {});
   if (results) {
     const {frameId, result} = results[0];
-    if (frameId === 0 && result?.includes("application/pdf"))
-      return true;
+    return frameId === 0 && result;
   }
   return false;
-}
-
-function respond(request, sender, sendResponse) {
-  if (request.action === "getViewerURL")
-    sendResponse({ url: getViewerURL(baseUrl, request.body) });
 }

@@ -36,12 +36,10 @@ const Doqment = {
     document.addEventListener("keydown", this.handleShortcut.bind(this));
     const app = window.PDFViewerApplication;
     getViewerEventBus(app).then(eventBus => {
-      /* In Firefox, set base URL of PDF's links to the original URL */
-      if (window.location.protocol === "moz-extension:") {
-        eventBus.on("documentinit", () => {
-          app.pdfLinkService.baseUrl = app.baseUrl;
-        });
-      }
+      /* Set base URL of PDF's links (bookmarks) to the original URL */
+      eventBus.on("documentinit", () => {
+        app.pdfLinkService.baseUrl = app.baseUrl;
+      });
       eventBus.on("documenterror", this.handleError.bind(this));
       eventBus.on("resize", this.resetZoomStatus.bind(this));
       eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
