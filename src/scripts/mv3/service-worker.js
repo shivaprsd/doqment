@@ -7,6 +7,7 @@ import { getViewerURL } from "../utils.js";
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
 chrome.permissions.onRemoved.addListener(resetMenus);
+chrome.permissions.onAdded.addListener(checkPermit);
 chrome.action.onClicked.addListener(newViewer);
 chrome.runtime.onMessage.addListener(respond);
 
@@ -21,34 +22,32 @@ function createMenus() {
   const createMenu = (id, title, contexts, extras) => {
     chrome.contextMenus.create({ id, title, contexts, ...extras });
   };
+  const createOption = (...args) => createMenu(...args, { type: "checkbox" });
+
   createMenu("open-link", "Open in do&qment", ["link", "frame"]);
-  createMenu("allow-all", "Always allow access to sites", ["action"], {
-    type: "checkbox"
-  });
-  createMenu("make-default", "Make doqment the default viewer", ["action"], {
-    type: "checkbox",
-    enabled: false
-  });
+  createOption("allow-all", "Always allow access to sites", ["action"]);
+  createOption("make-default", "Make doqment the default viewer", ["action"]);
 }
 
 async function handleClick(info, tab) {
   const menuId = info.menuItemId;
+  const tabId = (tab.id < 0) ? null : tab.id;
   switch (menuId) {
     case "open-link":
       const url = info.linkUrl || info.frameUrl;
-      const tabId = (tab.id < 0) ? null : tab.id;
       await openLink(url, tabId);
       break;
     case "allow-all":
-      await requestAccess(menuId, info.checked);
+      await requestAccess(menuId, info.checked, tabId);
       break;
     case "make-default":
-      toggleAutoOpen(info.checked);
+      const enable = info.checked && await requestAccess("allow-all", true);
+      toggleAutoOpen(enable, menuId);
       break;
   }
 }
 
-async function openLink(url, tabId) {
+async function openLink(url, openerTabId) {
   let viewerUrl;
   if (url.startsWith(baseUrl)) {
     viewerUrl = url;
@@ -59,28 +58,28 @@ async function openLink(url, tabId) {
     }
     viewerUrl = getViewerURL(baseUrl, url);
   }
-  const newTab = await chrome.tabs.create({ url, openerTabId: tabId });
+  const newTab = await chrome.tabs.create({ url, openerTabId });
   loadViewer(viewerUrl, newTab.id);
 }
 
-async function requestAccess(menuId, allow) {
+async function requestAccess(menuId, allow, openerTabId) {
+  let allowed;
   if (allow) {
     const permit = { origins: ["<all_urls>"] };
-    if (!await chrome.permissions.request(permit)) {
-      updateMenu(menuId, { checked: false });
-    } else {
-      updateMenu("make-default", { enabled: true });
-    }
+    allowed = await chrome.permissions.request(permit);
   } else {
     /* Users have to manually revoke site access via settings;
      * otherwise, no prompt is shown for future requests */
-    updateMenu(menuId, { checked: true });
+    allowed = true;
+    openSettings(openerTabId);
   }
+  updateMenu(menuId, { checked: allowed });
+  return allowed;
 }
 
 /* Set content script to detect PDFs and send back the URL;
  * respond by loading the viewer frame in the sender tab */
-function toggleAutoOpen(enable) {
+function toggleAutoOpen(enable, menuId) {
   if (enable) {
     chrome.scripting.registerContentScripts([{
       id: "auto-open",
@@ -90,8 +89,9 @@ function toggleAutoOpen(enable) {
       allFrames: true
     }]);
   } else {
-    chrome.scripting.unregisterContentScripts({ ids: ["auto-open"] });
+    chrome.scripting.unregisterContentScripts();
   }
+  updateMenu(menuId, { checked: enable });
 }
 
 function respond(request, sender, sendResponse) {
@@ -105,6 +105,42 @@ function respond(request, sender, sendResponse) {
   }
 }
 
+/* Guide users in removing all-sites access permission, and prompt them
+ * to open the settings page. Since the SW has no window object, to show
+ * the dialog we have to workaround by executing a script in the current
+ * tab (if allowed) or an extension page/frame (if one exists). */
+function openSettings(openerTabId) {
+  const message = "Extensions cannot truly give up granted permissions.\n\n" +
+                  "To revoke or modify the permission, visit 'Site access' " +
+                  "settings in extension details.\n\nDo you want to open it?";
+  const confirm = {
+    target: { tabId: openerTabId },
+    func: msg => window.confirm(msg),
+    args: [message]
+  };
+  chrome.scripting.executeScript(confirm)
+    .catch(r => chrome.tabs.sendMessage(openerTabId, message))
+    .catch(r => messageExtensionFrame(message))
+    .catch(r => {})
+    .then(results => {
+      /* If couldn't display the dialog (open anyway) or user clicked OK */
+      if (!results || results[0].result) {
+        const settingsUrl = "chrome://extensions/?id=" + chrome.runtime.id;
+        chrome.tabs.create({ url: settingsUrl, openerTabId });
+      } else {
+        /* User cancelled; reactivate original tab in case it was switched */
+        chrome.tabs.update(openerTabId, { active: true });
+      }
+    });
+}
+
+function messageExtensionFrame(message) {
+  let tabId, frameId;
+  return chrome.runtime.getContexts({ contextTypes: ["TAB"] })
+           .then(tabs => ({tabId, frameId} = tabs[0]))
+           .then(() => chrome.tabs.sendMessage(tabId, message, {frameId}));
+}
+
 function updateMenu(menuId, params) {
   chrome.contextMenus.update(menuId, params);
 }
@@ -112,8 +148,14 @@ function updateMenu(menuId, params) {
 function resetMenus(permit) {
   if (permit.origins.includes("<all_urls>")) {
     updateMenu("allow-all", { checked: false });
-    updateMenu("make-default", { checked: false, enabled: false });
+    updateMenu("make-default", { checked: false });
     chrome.scripting.unregisterContentScripts();
+  }
+}
+
+function checkPermit(permit) {
+  if (permit.origins.includes("<all_urls>")) {
+    updateMenu("allow-all", { checked: true });
   }
 }
 
@@ -161,8 +203,8 @@ async function isPdfTab(tabId) {
     if (document.contentType?.includes("application/pdf"))
       return document.getElementById("doqmentViewer") == null;
   }
-  const details = { target: {tabId}, func: isPdfContent };
-  const results = await chrome.scripting.executeScript(details).catch(r => {});
+  const check = { target: {tabId}, func: isPdfContent };
+  const results = await chrome.scripting.executeScript(check).catch(r => {});
   if (results) {
     const {frameId, result} = results[0];
     return frameId === 0 && result;
