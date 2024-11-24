@@ -17,6 +17,10 @@ const splashUrl = getViewerURL(baseUrl, "/pages/Open File");
 const autoOpener = "scripts/mv3/content-script.js";
 const viewerCSS = "scripts/mv3/viewer.css";
 
+function getMenuTitle(autoOpenEnabled) {
+  return !autoOpenEnabled ? "Open in do&qment" : "Open in built-in PDF viewer";
+}
+
 /* Event handlers */
 function createMenus() {
   const createMenu = (id, title, contexts, extras) => {
@@ -24,7 +28,7 @@ function createMenus() {
   };
   const createOption = (...args) => createMenu(...args, { type: "checkbox" });
 
-  createMenu("open-link", "Open in do&qment", ["link", "frame"]);
+  createMenu("open-link", getMenuTitle(false), ["link", "frame"]);
   createOption("allow-all", "Always allow access to sites", ["action"]);
   createOption("make-default", "Make doqment the default viewer", ["action"]);
 }
@@ -47,19 +51,25 @@ async function handleClick(info, tab) {
   }
 }
 
+/* Open link in the viewer after requesting host permission to it;
+/* if doqment is the default, open in the built-in viewer instead */
 async function openLink(url, openerTabId) {
+  const permit = { origins: [url] };
   let viewerUrl;
-  if (url.startsWith(baseUrl)) {
-    viewerUrl = url;
-  } else {
-    const permit = { origins: [url] };
-    if (!await chrome.permissions.request(permit)) {
-      return;
-    }
+  if (!url.startsWith(baseUrl) && await chrome.permissions.request(permit)) {
     viewerUrl = getViewerURL(baseUrl, url);
   }
-  const newTab = await chrome.tabs.create({ url, openerTabId });
-  loadViewer(viewerUrl, newTab.id);
+  const scripts = await chrome.scripting.getRegisteredContentScripts();
+  /* We cannot check this earlier because `permissions.request()`
+   * has to be called immediately after user action where needed */
+  if (scripts.length > 0) {
+    url = new URL(url);
+    url.searchParams.set("doqment", "ignore");
+    chrome.tabs.create({ url: url.toString(), openerTabId });
+  } else if (viewerUrl) {
+    const newTab = await chrome.tabs.create({ url, openerTabId });
+    loadViewer(viewerUrl, newTab.id);
+  }
 }
 
 async function requestAccess(menuId, allow, openerTabId) {
@@ -92,6 +102,7 @@ function toggleAutoOpen(enable, menuId) {
     chrome.scripting.unregisterContentScripts();
   }
   updateMenu(menuId, { checked: enable });
+  updateMenu("open-link", { title: getMenuTitle(enable) });
 }
 
 function respond(request, sender, sendResponse) {
