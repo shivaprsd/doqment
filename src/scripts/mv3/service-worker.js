@@ -55,20 +55,25 @@ async function handleClick(info, tab) {
 /* if doqment is the default, open in the built-in viewer instead */
 async function openLink(url, openerTabId) {
   const permit = { origins: [url] };
-  let viewerUrl;
-  if (!url.startsWith(baseUrl) && await chrome.permissions.request(permit)) {
-    viewerUrl = getViewerURL(baseUrl, url);
+  const allowed = await chrome.permissions.request(permit).catch(r => {});
+  if (allowed === false) {
+    return;
   }
+  const isViewerUrl = url.startsWith(baseUrl);
   const scripts = await chrome.scripting.getRegisteredContentScripts();
   /* We cannot check this earlier because `permissions.request()`
    * has to be called immediately after user action where needed */
   if (scripts.length > 0) {
+    if (isViewerUrl) {
+      url = new URL(url).searchParams.get("file");
+    }
     url = new URL(url);
     url.searchParams.set("doqment", "ignore");
     chrome.tabs.create({ url: url.toString(), openerTabId });
-  } else if (viewerUrl) {
+  } else {
     const newTab = await chrome.tabs.create({ url, openerTabId });
-    loadViewer(viewerUrl, newTab.id);
+    if (allowed)
+      loadViewer(getViewerURL(baseUrl, url), newTab.id);
   }
 }
 
@@ -106,13 +111,17 @@ function toggleAutoOpen(enable, menuId) {
 }
 
 function respond(request, sender, sendResponse) {
+  const tabId = sender.tab.id;
   if (request.action === "loadViewer") {
     const viewerUrl = getViewerURL(baseUrl, request.body);
     if (sender.frameId === 0) {
-      loadViewer(viewerUrl, sender.tab.id);
+      loadViewer(viewerUrl, tabId);
     } else {
       sendResponse({ url: viewerUrl });
     }
+  } else if (request.action === "removeViewer") {
+    const func = () => document.getElementById("doqmentViewer").remove();
+    chrome.scripting.executeScript({ target: {tabId}, func });
   }
 }
 
@@ -179,18 +188,14 @@ async function newViewer(tab) {
     return chrome.extension.isAllowedFileSchemeAccess();
   };
   const url = tab.url;
-  let viewerUrl;
+  let viewerUrl = splashUrl;
   if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
     viewerUrl = messageUrl;
   } else if (await isPdfTab(tab.id)) {
-    viewerUrl = getViewerURL(baseUrl, url);
+    loadViewer(getViewerURL(baseUrl, url), tab.id);
+    return;
   }
-
-  if (viewerUrl) {
-    loadViewer(viewerUrl, tab.id);
-  } else {
-    chrome.tabs.create({ url: splashUrl, index: tab.index + 1 });
-  }
+  chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
 /* Load viewer in a full page frame in the given tab */
@@ -199,6 +204,7 @@ function loadViewer(viewerUrl, tabId) {
     const frame = document.createElement("iframe");
     frame.src = src;
     frame.id = "doqmentViewer";
+    frame.setAttribute("allow", "fullscreen");
     document.body.prepend(frame);
   };
   chrome.scripting.executeScript({
