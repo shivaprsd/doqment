@@ -93,6 +93,7 @@ const Doqment = {
     window.alert(details.message);
     app.loadingBar?.hide();
     app.close();
+    chrome.runtime.sendMessage({ action: "removeViewer" });
   },
 
   /* Smart zoom */
