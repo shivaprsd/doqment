@@ -11,13 +11,16 @@ const pdfSources = {
 const options = ["blocking", "responseHeaders"];
 const localPdf = {
   url: [
-    {urlPrefix: "file://", pathSuffix: ".pdf"},
-    {urlPrefix: "file://", pathSuffix: ".PDF"}
+    { urlPrefix: "file://", pathSuffix: ".pdf" },
+    { urlPrefix: "file://", pathSuffix: ".PDF" }
   ]
 };
 browser.webRequest.onHeadersReceived.addListener(redirect, pdfSources, options);
-browser.webNavigation.onBeforeNavigate.addListener(loadViewer, localPdf);
 browser.browserAction.onClicked.addListener(newViewer);
+browser.runtime.onInstalled.addListener(details => {
+  if (details.reason === "install")
+    browser.webNavigation.onBeforeNavigate.addListener(showMessage, localPdf);
+});
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
@@ -28,9 +31,11 @@ function redirect(details) {
   if (isPdfResp(details) && !shouldDownload(details))
     return { redirectUrl: getViewerURL(baseUrl, details.url) };
 }
-function loadViewer(details) {
-  if (!details.frameId)
-    browser.tabs.update(details.tabId, { url: messageUrl });
+function showMessage(details) {
+  if (!details.frameId) {
+    browser.tabs.create({ openerTabId: details.tabId, url: messageUrl });
+    browser.webNavigation.onBeforeNavigate.removeListener(showMessage);
+  }
 }
 function newViewer(_, clickData) {
   const btn = clickData?.button;
