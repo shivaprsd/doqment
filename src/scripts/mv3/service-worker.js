@@ -122,6 +122,10 @@ function respond(request, sender, sendResponse) {
   } else if (request.action === "removeViewer") {
     const func = () => document.getElementById("doqmentViewer").remove();
     chrome.scripting.executeScript({ target: {tabId}, func });
+  } else if (request.action === "updateTitle") {
+    const func = title => document.title = title;
+    const title = request.body;
+    chrome.scripting.executeScript({ target: { tabId }, func, args: [title] });
   }
 }
 
@@ -203,9 +207,10 @@ function loadViewer(viewerUrl, tabId) {
   const injectFrame = src => {
     const frame = document.createElement("iframe");
     frame.src = src;
-    frame.id = "doqmentViewer";
+    frame.name = frame.id = "doqmentViewer";
     frame.setAttribute("allow", "fullscreen");
     document.body.prepend(frame);
+    document.querySelector("embed[type='application/pdf']")?.remove();
   };
   chrome.scripting.executeScript({
     target: {tabId}, func: injectFrame, args: [viewerUrl]

@@ -20,3 +20,12 @@ async function activateAndPrompt(message, reply) {
   await chrome.tabs.update(tab.id, { active: true });
   reply([{ result: window.confirm(message) }]);
 }
+
+if (window.name === "doqmentViewer") {
+  const updateTitle = () => {
+    const request = { action: "updateTitle", body: document.title };
+    chrome.runtime.sendMessage(request);
+  };
+  const title = document.querySelector("title");
+  new MutationObserver(updateTitle).observe(title, { childList: true });
+}
