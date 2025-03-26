@@ -210,12 +210,16 @@ function loadViewer(viewerUrl, tabId) {
     frame.name = frame.id = "doqmentViewer";
     frame.setAttribute("allow", "fullscreen");
     document.body.prepend(frame);
+  };
+  const removeEmbed = () => {
     document.querySelector("embed[type='application/pdf']")?.remove();
   };
   chrome.scripting.executeScript({
     target: {tabId}, func: injectFrame, args: [viewerUrl]
   }).then(() => {
     chrome.scripting.insertCSS({ target: {tabId}, files: [viewerCSS] });
+  }).then(() => {
+    chrome.scripting.executeScript({ target: {tabId}, func: removeEmbed });
   });
 }
 
