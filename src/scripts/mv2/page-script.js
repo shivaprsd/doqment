@@ -34,11 +34,15 @@ async function disableAnnotEditors() {
   }
 }
 
-/* Disable hardware accelerated rendering of canvas */
-function forceSoftwareRender() {
-  const doqOptions = { softwareRender: true };
-  localStorage.setItem("doq.options", JSON.stringify(doqOptions));
+/* Remove obsolete softwareRender doq option */
+function removeSoftwareRender() {
+  const doqOptions = JSON.parse(localStorage.getItem("doq.options"));
+  if (doqOptions) {
+    delete doqOptions["softwareRender"];
+    localStorage.setItem("doq.options", JSON.stringify(doqOptions));
+  }
+  localStorage.removeItem("doqment.update-0.9");
 }
 
 execOnEvent("init", [selectFirefox, disableAnnotEditors])
-execOnEvent("update-0.9", [forceSoftwareRender])
+execOnEvent("update-1.0", [removeSoftwareRender])

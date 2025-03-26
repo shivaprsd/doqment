@@ -19,7 +19,7 @@ const DoqPrefs = {
     localStorage.setItem("doq.options", JSON.stringify(this.store));
   },
   reset() {
-    this.store = (browser === chrome) ? {} : { softwareRender: true };
+    this.store = {};
     localStorage.setItem("doq.options", JSON.stringify(this.store));
   }
 }
