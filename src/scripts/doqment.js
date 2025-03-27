@@ -13,6 +13,8 @@ const Doqment = {
     return {
       docStyle: document.documentElement.style,
       viewer: document.getElementById("viewerContainer"),
+      printButton: document.getElementById("printButton"),
+      secondaryOpen: document.getElementById("secondaryOpenFile"),
       viewerClassList: document.getElementById("outerContainer").classList
     };
   },
@@ -30,10 +32,13 @@ const Doqment = {
     if (isTouchScreen()) {
       this.options.autoToolbar = true;
     }
-    const {viewer} = this.config;
+    const { viewer, printButton, secondaryOpen } = this.config;
     viewer.addEventListener("scroll", this.toggleToolbar.bind(this));
     viewer.addEventListener("dblclick", this.toggleSmartZoom.bind(this));
     document.addEventListener("keydown", this.handleShortcut.bind(this));
+    this.recreateOpenFile(printButton, "print").addEventListener("click", e => {
+      secondaryOpen.dispatchEvent(new Event("click"));
+    });
     const app = window.PDFViewerApplication;
     getViewerEventBus(app).then(eventBus => {
       /* Set base URL of PDF's links (bookmarks) to the original URL */
@@ -48,6 +53,14 @@ const Doqment = {
       eventBus.on("resize", this.resetZoomStatus.bind(this));
       eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
     });
+  },
+
+  recreateOpenFile(toolbarButton, name) {
+    const openButton = toolbarButton.cloneNode(true);
+    openButton.id = "openFile";
+    toolbarButton.before(openButton);
+    openButton.outerHTML = openButton.outerHTML.replaceAll(name, "open-file");
+    return toolbarButton.previousElementSibling;
   },
 
   toggleToolbar() {
