@@ -26,11 +26,13 @@ function createMenus() {
   const createMenu = (id, title, contexts, extras) => {
     chrome.contextMenus.create({ id, title, contexts, ...extras });
   };
-  const createOption = (...args) => createMenu(...args, { type: "checkbox" });
+  const createOption = (id, title, extras) => {
+    createMenu(id, title, ["action"], { type: "checkbox", ...extras });
+  };
 
   createMenu("open-link", getMenuTitle(false), ["link", "frame"]);
-  createOption("allow-all", "Always allow access to sites", ["action"]);
-  createOption("make-default", "Make doqment the default viewer", ["action"]);
+  createOption("allow-all", "Always allow access to sites");
+  createOption("make-default", "Make doqment the default viewer");
 }
 
 async function handleClick(info, tab) {

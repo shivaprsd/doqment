@@ -1,26 +1,31 @@
 import { hasCoarsePointer } from "./utils.js";
 
-const DoqPrefs = {
-  defaults: {},
-  store: {},
-  stash: {},
+class Preferences {
+  #defaults = {};
+  #storeKey = "";
+
+  constructor(storeKey) {
+    this.#storeKey = storeKey;
+    this.store = {};
+    this.stash = {};
+  }
   init(properties) {
     for (let key in properties) {
-      this.defaults[key] = properties[key].default;
+      this.#defaults[key] = properties[key].default;
     }
-    Object.freeze(this.defaults);
-    this.store = JSON.parse(localStorage.getItem("doq.options")) ?? this.store;
-  },
+    Object.freeze(this.#defaults);
+    this.store = JSON.parse(localStorage.getItem(this.#storeKey)) ?? this.store;
+  }
   get(key) {
-    return this.store[key] ?? this.defaults[key];
-  },
+    return this.store[key] ?? this.#defaults[key];
+  }
   set(key, value) {
     this.store[key] = value;
-    localStorage.setItem("doq.options", JSON.stringify(this.store));
-  },
+    localStorage.setItem(this.#storeKey, JSON.stringify(this.store));
+  }
   reset() {
     this.store = {};
-    localStorage.setItem("doq.options", JSON.stringify(this.store));
+    localStorage.setItem(this.#storeKey, JSON.stringify(this.store));
   }
 }
 
@@ -61,21 +66,33 @@ browser.runtime.getPlatformInfo().then(info => {
   document.body.classList.add(info.os);
 });
 
+const extOptions = document.getElementById("extOptions");
 const doqOptions = document.getElementById("doqOptions");
 const pdfjsOptions = document.getElementById("pdfjsOptions");
 const moreOptions = document.getElementById("moreOptions").content;
 const resetOptions = document.getElementById("resetOptions");
 const undoReset = document.getElementById("undoReset");
 
+const ExtPrefs = new Preferences("doqment.options");
+const DoqPrefs = new Preferences("doq.options");
+extOptions.addEventListener("change", e => updatePrefs(ExtPrefs, e.target));
 doqOptions.addEventListener("change", e => updatePrefs(DoqPrefs, e.target));
 pdfjsOptions.addEventListener("change", e => updatePrefs(PdfjsPrefs, e.target));
+
 moreOptions.querySelector("legend").addEventListener("change", toggleMore);
-doqOptions.addEventListener("change", toggleUndo);
-pdfjsOptions.addEventListener("change", toggleUndo);
+[extOptions, doqOptions, pdfjsOptions].forEach(options => {
+  options.addEventListener("change", toggleUndo);
+});
 resetOptions.onclick = undoReset.onclick = restorePrefs;
 
+const extSchema = browser.runtime.getURL("options.json");
 const doqSchema = browser.runtime.getURL("doq/addon/options.json");
 const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
+
+fetch(extSchema).then(resp => resp.json()).then(schema => {
+  ExtPrefs.init(schema.properties);
+  render(ExtPrefs, schema, extOptions);
+});
 
 fetch(doqSchema).then(resp => resp.json()).then(schema => {
   DoqPrefs.init(schema.properties);
@@ -224,6 +241,7 @@ async function restorePrefs() {
       updateControl(prefs, document.getElementById(key));
     }
   };
+  await restore(ExtPrefs);
   await restore(DoqPrefs);
   await restore(PdfjsPrefs);
   toggleUndo(reset);

@@ -1,0 +1,11 @@
+{
+    "type": "schema",
+    "properties": {
+        "showPdfTitle": {
+            "title": "Show PDF title on viewer tabs",
+            "description": "Whether to display the PDF's title (if present) in the titlebar/on the tabs, before the filename.",
+            "type": "boolean",
+            "default": true
+        }
+    }
+}

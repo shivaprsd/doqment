@@ -40,6 +40,10 @@ const Doqment = {
       eventBus.on("documentinit", () => {
         app.pdfLinkService.baseUrl = app.baseUrl;
       });
+      const options = JSON.parse(localStorage.getItem("doqment.options"));
+      if (options?.showPdfTitle === false) {
+        eventBus.on("metadataloaded", () => app.setTitleUsingUrl(app.url));
+      }
       eventBus.on("documenterror", this.handleError.bind(this));
       eventBus.on("resize", this.resetZoomStatus.bind(this));
       eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
