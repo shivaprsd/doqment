@@ -2,7 +2,7 @@
  * Intercept loading of PDF files and redirect them to the add-on
  * Adapted from => [pdf.js]/extensions/chromium/pdfHandler.js
  */
-import { getViewerURL } from "../utils.js";
+import { getViewerURL, execOnEvent } from "../utils.js";
 
 const pdfSources = {
   urls: ["<all_urls>"],
@@ -17,10 +17,7 @@ const localPdf = {
 };
 browser.webRequest.onHeadersReceived.addListener(redirect, pdfSources, options);
 browser.browserAction.onClicked.addListener(newViewer);
-browser.runtime.onInstalled.addListener(details => {
-  if (details.reason === "install")
-    browser.webNavigation.onBeforeNavigate.addListener(showMessage, localPdf);
-});
+browser.webNavigation.onBeforeNavigate.addListener(showMessage, localPdf);
 
 /* Event handlers */
 const baseUrl = browser.runtime.getURL("pdfjs/web/viewer.html");
@@ -33,7 +30,8 @@ function redirect(details) {
 }
 function showMessage(details) {
   if (!details.frameId) {
-    browser.tabs.create({ openerTabId: details.tabId, url: messageUrl });
+    const messageTab = { openerTabId: details.tabId, url: messageUrl };
+    execOnEvent("open-local-pdf", [() => browser.tabs.create(messageTab)]);
     browser.webNavigation.onBeforeNavigate.removeListener(showMessage);
   }
 }
