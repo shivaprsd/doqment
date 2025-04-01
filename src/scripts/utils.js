@@ -37,4 +37,4 @@ export function isTouchScreen() {
   return nonHoverable.matches && hasCoarsePointer();
 }
 
-export { getViewerEventBus } from "../doq/addon/lib/utils.js";
+export { getViewerEventBus } from "../doq/addon/app/utils.js";
