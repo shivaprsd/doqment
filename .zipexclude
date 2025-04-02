@@ -2,6 +2,7 @@
 *web/debugger.*
 *web/*.pdf
 *.git*
+pdfjs/*.zip
 doq/*.md
 doq/*.txt
 doq/lib/*
