@@ -23,6 +23,7 @@
     "page": "pages/options.html"
   },
   "web_accessible_resources": ["pdfjs/web/viewer.html"],
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'",
 
   "page_action": {
     "browser_style": true,
