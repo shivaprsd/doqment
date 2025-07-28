@@ -2,14 +2,15 @@
 *web/debugger.*
 *web/*.pdf
 *.git*
-pdfjs/*.zip
+pdfjs*.zip
+update.sh
+
 doq/*.md
 doq/*.txt
 doq/lib/*
 doq/tests/*
 doq/docs/*
 doq/package.json
-*VERSION
 *.DS_Store
 
 manifest-v?.json

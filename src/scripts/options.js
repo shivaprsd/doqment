@@ -1,4 +1,4 @@
-import { hasCoarsePointer } from "./utils.js";
+import { chooseViewerPath, hasCoarsePointer } from "./utils.js";
 
 class Preferences {
   #defaults = {};
@@ -87,7 +87,8 @@ resetOptions.onclick = undoReset.onclick = restorePrefs;
 
 const extSchema = browser.runtime.getURL("options.json");
 const doqSchema = browser.runtime.getURL("doq/addon/options.json");
-const pdfjsSchema = browser.runtime.getURL("pdfjs/preferences_schema.json");
+const pdfjsPath = await chooseViewerPath("/pdfjs/", "/pdfjs-latest/");
+const pdfjsSchema = browser.runtime.getURL(`${pdfjsPath}preferences_schema.json`);
 
 fetch(extSchema).then(resp => resp.json()).then(schema => {
   ExtPrefs.init(schema.properties);
@@ -99,7 +100,7 @@ fetch(doqSchema).then(resp => resp.json()).then(schema => {
   render(DoqPrefs, schema, doqOptions);
 });
 
-fetch(pdfjsSchema).then(resp => resp.json()).then(schema => {
+fetch(pdfjsSchema).then(resp => resp.json()).then(async schema => {
   const themeOption = schema.properties["viewerCssTheme"];
   const captionFix = " for the viewer toolbars and background.";
   themeOption.title = "Viewer theme";
@@ -107,6 +108,7 @@ fetch(pdfjsSchema).then(resp => resp.json()).then(schema => {
 
   delete schema.properties["disableTelemetry"];
   PdfjsPrefs.init();
+  await PdfjsPrefs.viewerLoad;
   render(PdfjsPrefs, schema, pdfjsOptions, moreOptions);
 });
 

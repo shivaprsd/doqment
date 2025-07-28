@@ -1,3 +1,14 @@
+/* Choose PDF.js viewer based on user preference */
+export async function chooseViewerPath(defaultPath, latestPath) {
+  const options = JSON.parse(localStorage.getItem("doqment.options"));
+  if (options?.useLatestPdfjs) {
+    const versionPath = `${latestPath}VERSION`;
+    if (await fetch(versionPath).then(resp => resp.ok).catch(err => false))
+      return latestPath;
+  }
+  return defaultPath;
+}
+
 /* Get original URL to PDF from query string */
 export function getPdfUrl() {
   const query = window.location.search.substring(1);

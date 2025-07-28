@@ -6,6 +6,12 @@
             "description": "Whether to display the PDF's title (if present) in the titlebar/on the tabs, before the filename.",
             "type": "boolean",
             "default": true
+        },
+        "useLatestPdfjs": {
+            "title": "Use the latest PDF.js viewer",
+            "description": "Whether to use the latest (untested) version of Firefox's PDF viewer (not recommended).",
+            "type": "boolean",
+            "default": false
         }
     }
 }
