@@ -21,18 +21,34 @@ function getMenuTitle(autoOpenEnabled) {
   return !autoOpenEnabled ? "Open in do&qment" : "Open in built-in PDF viewer";
 }
 
+async function getOptions() {
+  const {options} = await chrome.storage.local.get("options");
+  return options ?? {};
+}
+
+async function setOptionById(id, value) {
+  const key = id.replace(/-([a-z])/, (_, c) => c.toUpperCase());
+  const options = await getOptions();
+  await chrome.storage.local.set({ options: { ...options, [key]: value } });
+}
+
 /* Event handlers */
-function createMenus() {
+async function createMenus(details) {
   const createMenu = (id, title, contexts, extras) => {
     chrome.contextMenus.create({ id, title, contexts, ...extras });
   };
-  const createOption = (id, title, extras) => {
-    createMenu(id, title, ["action"], { type: "checkbox", ...extras });
+  const createOption = (id, title, checked, extras) => {
+    createMenu(id, title, ["action"], { type: "checkbox", checked, ...extras });
   };
+  const {allowAll, makeDefault, bypassNative} = await getOptions();
 
   createMenu("open-link", getMenuTitle(false), ["link", "frame"]);
-  createOption("allow-all", "Always allow access to sites");
-  createOption("make-default", "Make doqment the default viewer");
+  createOption("allow-all", "Always allow access to sites", allowAll);
+  createOption("make-default", "Make doqment the default viewer", makeDefault);
+  createOption("bypass-native", "Bypass the built-in PDF viewer", bypassNative);
+
+  if (makeDefault && details.reason === chrome.runtime.OnInstalledReason.UPDATE)
+    toggleAutoOpen(makeDefault, "make-default");
 }
 
 async function handleClick(info, tab) {
@@ -41,14 +57,17 @@ async function handleClick(info, tab) {
   switch (menuId) {
     case "open-link":
       const url = info.linkUrl || info.frameUrl;
-      await openLink(url, tabId);
+      openLink(url, tabId);
       break;
     case "allow-all":
-      await requestAccess(menuId, info.checked, tabId);
+      requestAccess(menuId, info.checked, tabId);
       break;
     case "make-default":
       const enable = info.checked && await requestAccess("allow-all", true);
       toggleAutoOpen(enable, menuId);
+      break;
+    case "bypass-native":
+      setOptionById(menuId, info.checked);
       break;
   }
 }
@@ -72,10 +91,15 @@ async function openLink(url, openerTabId) {
     url = new URL(url);
     url.searchParams.set("doqment", "ignore");
     chrome.tabs.create({ url: url.toString(), openerTabId });
+    return;
+  }
+  const viewerUrl = isViewerUrl ? url : getViewerURL(baseUrl, url);
+  if ((await getOptions()).bypassNative) {
+    chrome.tabs.create({ url: viewerUrl, openerTabId });
   } else {
     const newTab = await chrome.tabs.create({ url, openerTabId });
     if (allowed)
-      loadViewer(getViewerURL(baseUrl, url), newTab.id);
+      loadViewer(viewerUrl, newTab.id);
   }
 }
 
@@ -90,13 +114,13 @@ async function requestAccess(menuId, allow, openerTabId) {
     allowed = true;
     openSettings(openerTabId);
   }
-  updateMenu(menuId, { checked: allowed });
+  await updateOption(menuId, allowed);
   return allowed;
 }
 
 /* Set content script to detect PDFs and send back the URL;
  * respond by loading the viewer frame in the sender tab */
-function toggleAutoOpen(enable, menuId) {
+async function toggleAutoOpen(enable, menuId) {
   if (enable) {
     chrome.scripting.registerContentScripts([{
       id: "auto-open",
@@ -108,7 +132,7 @@ function toggleAutoOpen(enable, menuId) {
   } else {
     chrome.scripting.unregisterContentScripts();
   }
-  updateMenu(menuId, { checked: enable });
+  await updateOption(menuId, enable);
   updateMenu("open-link", { title: getMenuTitle(enable) });
 }
 
@@ -122,12 +146,14 @@ function respond(request, sender, sendResponse) {
       sendResponse({ url: viewerUrl });
     }
   } else if (request.action === "removeViewer") {
-    const func = () => document.getElementById("doqmentViewer").remove();
-    chrome.scripting.executeScript({ target: {tabId}, func });
+    if (sender.frameId) {
+      const func = () => document.getElementById("doqmentViewer").remove();
+      chrome.scripting.executeScript({ target: {tabId}, func });
+    }
   } else if (request.action === "updateTitle") {
     const func = title => document.title = title;
     const title = request.body;
-    chrome.scripting.executeScript({ target: { tabId }, func, args: [title] });
+    chrome.scripting.executeScript({ target: {tabId}, func, args: [title] });
   }
 }
 
@@ -171,17 +197,21 @@ function updateMenu(menuId, params) {
   chrome.contextMenus.update(menuId, params);
 }
 
-function resetMenus(permit) {
+async function updateOption(menuId, checked) {
+  await setOptionById(menuId, checked);
+  updateMenu(menuId, {checked});
+}
+
+async function resetMenus(permit) {
   if (permit.origins.includes("<all_urls>")) {
-    updateMenu("allow-all", { checked: false });
-    updateMenu("make-default", { checked: false });
-    chrome.scripting.unregisterContentScripts();
+    await updateOption("allow-all", false);
+    toggleAutoOpen(false, "make-default");
   }
 }
 
 function checkPermit(permit) {
   if (permit.origins.includes("<all_urls>")) {
-    updateMenu("allow-all", { checked: true });
+    updateOption("allow-all", true);
   }
 }
 

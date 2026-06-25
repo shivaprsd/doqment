@@ -15,7 +15,7 @@
     "128": "images/icon128.png"
   },
 
-  "permissions": ["activeTab", "contextMenus", "scripting"],
+  "permissions": ["activeTab", "contextMenus", "scripting", "storage"],
   "optional_host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "scripts/mv3/service-worker.js",
