@@ -60,6 +60,8 @@ const PdfjsPrefs = {
 
 if (typeof browser === "undefined") {
   window.browser = chrome;
+}
+if (browser.runtime.getManifest()["manifest_version"] === 3) {
   document.body.classList.add("chrome");
 }
 browser.runtime.getPlatformInfo().then(info => {

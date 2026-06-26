@@ -239,11 +239,14 @@ function loadViewer(viewerUrl, tabId) {
   const injectFrame = src => {
     const frame = document.createElement("iframe");
     frame.src = src;
-    frame.name = frame.id = "doqmentViewer";
+    frame.id = "doqmentViewer";
+    frame.name = "browserExtensionFrame";
     frame.setAttribute("allow", "fullscreen");
     document.body.prepend(frame);
   };
   const removeEmbed = () => {
+    const shadowRoot = chrome.dom.openOrClosedShadowRoot(document.body);
+    shadowRoot?.querySelector("iframe[type='application/pdf']")?.remove();
     document.querySelector("embed[type='application/pdf']")?.remove();
   };
   chrome.scripting.executeScript({

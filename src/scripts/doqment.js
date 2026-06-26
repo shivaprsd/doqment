@@ -49,6 +49,10 @@ const Doqment = {
       if (options?.showPdfTitle === false) {
         eventBus.on("metadataloaded", () => app.setTitleUsingUrl(app.url));
       }
+      if (options?.trackOutline !== false) {
+        const update = () => eventBus.dispatch("currentoutlineitem");
+        eventBus.on("pagesloaded", () => eventBus.on("pagechanging", update));
+      }
       eventBus.on("documenterror", this.handleError.bind(this));
       eventBus.on("resize", this.resetZoomStatus.bind(this));
       eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
