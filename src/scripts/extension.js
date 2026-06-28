@@ -1,4 +1,4 @@
-import { chooseViewerPath } from "./utils.js";
+import { chooseViewerPath, execOnEvent } from "./utils.js";
 
 /* Redirect to the latest PDF.js viewer if required */
 const defaultPath = "/pdfjs/";
@@ -16,3 +16,12 @@ if (location.protocol === "moz-extension:") {
 }
 import "./doqment.js";
 import "/doq/addon/doq.js";
+
+/* TEMP: Enable signature editor and comment annotations by default */
+function enableSignAndComment() {
+  const app = window.PDFViewerApplication;
+  app.preferences.set("enableSignatureEditor", true);
+  app.preferences.set("enableComment", true);
+  localStorage.removeItem("doqment.update-1.0");
+}
+execOnEvent("update-1.2", [enableSignAndComment])

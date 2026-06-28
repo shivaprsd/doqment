@@ -17,6 +17,12 @@ if (self === top && pdfUrl?.startsWith("http")) {
   });
 }
 
+/* Send the current page's clean URL to the pageAction popup */
+browser.runtime.onMessage.addListener((request, _, sendResponsce) => {
+  if (request.action === "getURL")
+    sendResponsce({ url: window.PDFViewerApplication.baseUrl });
+});
+
 /* Make Firefox the pre-selected color scheme */
 function selectFirefox() {
   /* scheme = 0 because of the migration code in doq */
@@ -34,15 +40,4 @@ async function disableAnnotEditors() {
   }
 }
 
-/* Remove obsolete softwareRender doq option */
-function removeSoftwareRender() {
-  const doqOptions = JSON.parse(localStorage.getItem("doq.options"));
-  if (doqOptions) {
-    delete doqOptions["softwareRender"];
-    localStorage.setItem("doq.options", JSON.stringify(doqOptions));
-  }
-  localStorage.removeItem("doqment.update-0.9");
-}
-
 execOnEvent("init", [selectFirefox, disableAnnotEditors])
-execOnEvent("update-1.0", [removeSoftwareRender])

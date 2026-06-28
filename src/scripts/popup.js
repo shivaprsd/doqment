@@ -1,12 +1,14 @@
-const getUrl = {code: "PDFViewerApplication.baseUrl"};
-const urlTag = document.querySelector("p");
+const getUrl = tabs => browser.tabs.sendMessage(tabs[0].id, {action: "getURL"});
+const activeTab = { active: true, currentWindow: true };
 
-browser.tabs.executeScript(getUrl).then(updateBody);
-urlTag.onmousedown = copyUrl;
+browser.tabs.query(activeTab).then(getUrl).then(updateBody);
 
 function updateBody(result) {
-  urlTag.textContent = result.join("");
+  const urlTag = document.querySelector("p");
+  urlTag.textContent = result.url;
+  urlTag.onmousedown = copyUrl;
 }
+
 function copyUrl() {
   navigator.clipboard.writeText(this.textContent).then(() => {
     this.textContent = "Copied to clipboard!";
