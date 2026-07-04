@@ -6,8 +6,9 @@
 [PDF.js][1] generic viewer with [*doq*][2] reader mode add-on (that lets you
 change the PDF's colors) on top, packaged as a Web Extension.
 
-It also adds some other features like Smart Zoom text and Show/Hide toolbar to
-optimize space and assist reading, especially on smaller devices.
+It also adds some other features like Auto-track Document Outline, Smart Zoom
+text and Show/Hide toolbar to optimize space and assist reading, especially on
+smaller devices.
 
 Here is the demo PDF rendered in *Solarized Light* theme:
 
@@ -42,8 +43,9 @@ something other than *Open in Firefox*).
 
 #### Note for Chrome(ium) users:
 
-The extension can open PDF links via the context menu whether the native viewer
-is enabled or disabled. To always open PDFs in the browser without downloading
+The extension can open PDF links via the context menu even when the native PDF
+viewer is disabled (if _Bypass the built-in PDF viewer_ option is checked in the
+toolbar-button menu). To always open PDFs in the browser without downloading
 them first, keep it enabled. (Go to *Settings* -> *Privacy and security* ->
 *Site Settings* -> *Additional content settings* (under *Content*) ->
 *PDF documents*; or open `chrome://settings/content/pdfDocuments`).

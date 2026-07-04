@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "1.1",
+  "version": "1.2",
 
   "name": "doqment PDF Reader",
   "short_name": "doqment",
@@ -9,6 +9,14 @@
   "homepage_url": "https://github.com/shivaprsd/doqment",
   "icons": {
     "48": "images/icon.svg", "96": "images/icon.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{abcbde6d-57a1-45e3-9654-da805cf3568b}",
+      "data_collection_permissions": { "required": ["none"] },
+      "strict_min_version": "112.0"
+    },
+    "gecko_android": { "strict_min_version": "120.0" }
   },
 
   "permissions": [

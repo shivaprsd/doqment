@@ -2,8 +2,9 @@
 *web/debugger.*
 *web/*.pdf
 *.git*
-pdfjs*.zip
-update.sh
+*.zip
+*.sh
+*.DS_Store
 
 doq/*.md
 doq/*.txt
@@ -11,6 +12,5 @@ doq/lib/*
 doq/tests/*
 doq/docs/*
 doq/package.json
-*.DS_Store
 
 manifest-v?.json
