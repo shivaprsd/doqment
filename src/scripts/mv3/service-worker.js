@@ -2,7 +2,7 @@
  * Add a context menu to open links (to PDF) in the extension
  * We won't check the link and leave error handling to viewer
  */
-import { getViewerURL } from "../utils.js";
+import { getViewerURL, setHashParam } from "../utils.js";
 
 chrome.runtime.onInstalled.addListener(createMenus);
 chrome.contextMenus.onClicked.addListener(handleClick);
@@ -81,20 +81,20 @@ async function openLink(url, openerTabId) {
     return;
   }
   const isViewerUrl = url.startsWith(baseUrl);
-  const scripts = await chrome.scripting.getRegisteredContentScripts();
+  const {makeDefault, bypassNative} = await getOptions();
   /* We cannot check this earlier because `permissions.request()`
    * has to be called immediately after user action where needed */
-  if (scripts.length > 0) {
+  if (makeDefault) {
     if (isViewerUrl) {
       url = new URL(url).searchParams.get("file");
     }
     url = new URL(url);
-    url.searchParams.set("doqment", "ignore");
+    setHashParam(url, "doqment", "ignore");
     chrome.tabs.create({ url: url.toString(), openerTabId });
     return;
   }
   const viewerUrl = isViewerUrl ? url : getViewerURL(baseUrl, url);
-  if ((await getOptions()).bypassNative) {
+  if (bypassNative) {
     chrome.tabs.create({ url: viewerUrl, openerTabId });
   } else {
     const newTab = await chrome.tabs.create({ url, openerTabId });
@@ -145,11 +145,8 @@ function respond(request, sender, sendResponse) {
     } else {
       sendResponse({ url: viewerUrl });
     }
-  } else if (request.action === "removeViewer") {
-    if (sender.frameId) {
-      const func = () => document.getElementById("doqmentViewer").remove();
-      chrome.scripting.executeScript({ target: {tabId}, func });
-    }
+  } else if (request.action === "checkDefault") {
+    return getOptions().then(options => ({ isDefault: options.makeDefault }));
   } else if (request.action === "updateTitle") {
     const func = title => document.title = title;
     const title = request.body;

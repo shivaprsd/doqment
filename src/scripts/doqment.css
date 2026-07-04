@@ -28,3 +28,7 @@
   scroll-snap-align: start;
   scroll-margin-left: var(--scroll-snap);
 }
+/* Document error */
+:is(#downloadButton, #secondaryToolbarToggleButton).outline {
+  outline: 2px solid red;
+}

@@ -15,6 +15,13 @@ export function getPdfUrl() {
   return new URLSearchParams(query).get("file");
 }
 
+/* Set URL hash param, just like URLSearchParams.set() */
+export function setHashParam(url, param, value) {
+  const options = new URLSearchParams(url.hash.slice(1));
+  options.set(param, value);
+  url.hash = options.toString();
+}
+
 /* Get URL to the viewer with encoded PDF URL */
 export function getViewerURL(viewerUrl, pdfUrl) {
   const encodeFirst = (elem, index) => {

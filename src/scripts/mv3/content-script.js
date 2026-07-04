@@ -14,7 +14,7 @@ if (detectPdfContent()) {
 function detectPdfContent() {
   const url = new URL(window.location.href);
   /* Ignore pages marked by the service worker */
-  if (url.searchParams.get("doqment") === "ignore") {
+  if (url.hash.includes("doqment=ignore")) {
     return false;
   }
   if (document.contentType?.includes("application/pdf"))

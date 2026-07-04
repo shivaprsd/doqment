@@ -64,7 +64,8 @@ function isPdfResp(details) {
 /* Check if the PDF should actually be downloaded; sites like Google Docs use
  * a hidden <iframe> to download docs as PDF */
 function shouldDownload(details) {
-  if (details.url.includes("pdfjs.action=download"))
+  const url = new URL(details.url);
+  if (url.hash.includes("pdfjs.action=download"))
     return true;
   if (details.type !== "main_frame") {
     const cd = getHeader(details.responseHeaders, "content-disposition");

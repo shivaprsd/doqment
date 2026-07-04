@@ -1,4 +1,4 @@
-import { addLink, getViewerEventBus, isTouchScreen } from "./utils.js";
+import { addLink, getViewerEventBus, isTouchScreen, setHashParam } from "./utils.js";
 
 const Doqment = {
   config: {},
@@ -109,12 +109,36 @@ const Doqment = {
     }
   },
 
-  handleError(details) {
+  async handleError(details) {
     const app = window.PDFViewerApplication;
-    window.alert(details.message);
+    let pdfUrl;
+    try { pdfUrl = new URL(app.baseUrl); } catch (_) { }
+
+    const isFirefox = window.location.protocol === "moz-extension:";
+    const chromeStat = () => chrome.runtime.sendMessage({action: "checkDefault"});
+    const { message } = details;
+    const info = "You can directly download the PDF from the toolbar.";
+
+    if (pdfUrl && !isFirefox && (await chromeStat())?.isDefault) {
+      const query = "Do you want to load the link in the built-in PDF viewer?";
+      const loadDirect = window.confirm(`${message}\n${info}\n\n${query}`);
+      if (loadDirect) {
+        pdfUrl.hash = window.location.hash;
+        setHashParam(pdfUrl, "doqment", "ignore");
+        window.location.replace(pdfUrl.toString());
+      }
+    } else {
+      window.alert(`${message}\n\n${info}`);
+    }
     app.loadingBar?.hide();
-    app.close();
-    chrome.runtime.sendMessage({ action: "removeViewer" });
+
+    const isMediumView = window.matchMedia("(max-width: 750px)").matches;
+    const button = document.getElementById(
+      isMediumView ? "secondaryToolbarToggleButton" : "downloadButton"
+    );
+    const removeOutline = evt => evt.target.classList.remove("outline");
+    button?.classList.add("outline");
+    button?.addEventListener("click", removeOutline, { once: true });
   },
 
   /* Smart zoom */
