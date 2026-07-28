@@ -10,12 +10,17 @@ chrome.permissions.onRemoved.addListener(resetMenus);
 chrome.permissions.onAdded.addListener(checkPermit);
 chrome.action.onClicked.addListener(newViewer);
 chrome.runtime.onMessage.addListener(respond);
+chrome.tabs.onUpdated.addListener(restoreFileTab);
+chrome.tabs.onRemoved.addListener(forgetFileTab);
 
 const baseUrl = chrome.runtime.getURL("pdfjs/web/viewer.html");
 const messageUrl = getViewerURL(baseUrl, "/pages/Access Denied");
 const splashUrl = getViewerURL(baseUrl, "/pages/Open File");
 const autoOpener = "scripts/mv3/content-script.js";
 const viewerCSS = "scripts/mv3/viewer.css";
+
+/* Track tabs being re-injected to prevent infinite loops */
+const reinjecting = new Set();
 
 function getMenuTitle(autoOpenEnabled) {
   return !autoOpenEnabled ? "Open in do&qment" : "Open in built-in PDF viewer";
@@ -139,9 +144,10 @@ async function toggleAutoOpen(enable, menuId) {
 function respond(request, sender, sendResponse) {
   const tabId = sender.tab.id;
   if (request.action === "loadViewer") {
-    const viewerUrl = getViewerURL(baseUrl, request.body);
+    const pdfUrl = request.body;
+    const viewerUrl = getViewerURL(baseUrl, pdfUrl);
     if (sender.frameId === 0) {
-      loadViewer(viewerUrl, tabId);
+      loadViewer(viewerUrl, tabId, pdfUrl);
     } else {
       sendResponse({ url: viewerUrl });
     }
@@ -225,14 +231,18 @@ async function newViewer(tab) {
   if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
     viewerUrl = messageUrl;
   } else if (await isPdfTab(tab.id)) {
-    loadViewer(getViewerURL(baseUrl, url), tab.id);
+    loadViewer(getViewerURL(baseUrl, url), tab.id, url);
     return;
   }
   chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
-/* Load viewer in a full page frame in the given tab */
-function loadViewer(viewerUrl, tabId) {
+/* Load viewer in a full page frame in the given tab;
+ * if pdfUrl is a file:// URL, persist it for reload recovery */
+function loadViewer(viewerUrl, tabId, pdfUrl) {
+  if (pdfUrl && pdfUrl.startsWith("file://")) {
+    rememberFileTab(tabId, pdfUrl);
+  }
   const injectFrame = src => {
     const frame = document.createElement("iframe");
     frame.src = src;
@@ -268,4 +278,54 @@ async function isPdfTab(tabId) {
     return frameId === 0 && result;
   }
   return false;
+}
+
+/* Session storage helpers for persisting file:// tab URLs across reloads.
+ * Uses chrome.storage.session which survives service worker restarts
+ * but is cleared when the browser is closed (matching expected behavior). */
+async function rememberFileTab(tabId, fileUrl) {
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  fileTabs[tabId] = fileUrl;
+  await chrome.storage.session.set({ fileTabs });
+}
+
+async function forgetFileTab(tabId) {
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  if (tabId in fileTabs) {
+    delete fileTabs[tabId];
+    await chrome.storage.session.set({ fileTabs });
+  }
+}
+
+async function getFileTabUrl(tabId) {
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  return fileTabs[tabId];
+}
+
+/* Re-inject the viewer when a tab with a persisted file:// PDF reloads.
+ * Uses the reinjecting Set to prevent infinite loops from our own injection
+ * triggering another onUpdated event. */
+async function restoreFileTab(tabId, changeInfo, tab) {
+  if (changeInfo.status !== "loading" || reinjecting.has(tabId)) {
+    return;
+  }
+  const fileUrl = await getFileTabUrl(tabId);
+  if (!fileUrl) {
+    return;
+  }
+  /* Only restore for file:// or about:blank URLs (reload targets) */
+  const tabUrl = tab.url || tab.pendingUrl || "";
+  if (!tabUrl.startsWith("file://") && tabUrl !== "about:blank" &&
+      !tabUrl.startsWith(baseUrl)) {
+    /* Tab navigated away to a non-file URL; stop tracking it */
+    forgetFileTab(tabId);
+    return;
+  }
+  reinjecting.add(tabId);
+  const viewerUrl = getViewerURL(baseUrl, fileUrl);
+  /* Small delay to let the page settle before injecting */
+  setTimeout(() => {
+    loadViewer(viewerUrl, tabId, fileUrl);
+    reinjecting.delete(tabId);
+  }, 100);
 }
