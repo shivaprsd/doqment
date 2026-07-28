@@ -259,10 +259,10 @@ function loadViewer(viewerUrl, tabId, pdfUrl) {
   chrome.scripting.executeScript({
     target: {tabId}, func: injectFrame, args: [viewerUrl]
   }).then(() => {
-    chrome.scripting.insertCSS({ target: {tabId}, files: [viewerCSS] });
+    return chrome.scripting.insertCSS({ target: {tabId}, files: [viewerCSS] });
   }).then(() => {
-    chrome.scripting.executeScript({ target: {tabId}, func: removeEmbed });
-  });
+    return chrome.scripting.executeScript({ target: {tabId}, func: removeEmbed });
+  }).catch(r => {});
 }
 
 /* Check if the document MIME type is PDF in given tab */
@@ -281,40 +281,45 @@ async function isPdfTab(tabId) {
 }
 
 /* Session storage helpers for persisting file:// tab URLs across reloads.
- * Uses chrome.storage.session which survives service worker restarts
- * but is cleared when the browser is closed (matching expected behavior). */
+ * Uses chrome.storage.session which survives service worker restarts. */
 async function rememberFileTab(tabId, fileUrl) {
-  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs").catch(() => ({}));
   fileTabs[tabId] = fileUrl;
-  await chrome.storage.session.set({ fileTabs });
+  await chrome.storage.session.set({ fileTabs }).catch(() => {});
 }
 
 async function forgetFileTab(tabId) {
-  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs").catch(() => ({}));
   if (tabId in fileTabs) {
     delete fileTabs[tabId];
-    await chrome.storage.session.set({ fileTabs });
+    await chrome.storage.session.set({ fileTabs }).catch(() => {});
   }
 }
 
 async function getFileTabUrl(tabId) {
-  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs");
+  const { fileTabs = {} } = await chrome.storage.session.get("fileTabs").catch(() => ({}));
   return fileTabs[tabId];
 }
 
-/* Re-inject the viewer when a tab with a persisted file:// PDF reloads.
- * Uses the reinjecting Set to prevent infinite loops from our own injection
- * triggering another onUpdated event. */
+/* Re-inject the viewer when a tab with a local file:// PDF reloads.
+ * Handles both tab reloads within a session and full browser restarts
+ * by recovering the file URL from tab.url if session storage was cleared. */
 async function restoreFileTab(tabId, changeInfo, tab) {
   if (changeInfo.status !== "loading" || reinjecting.has(tabId)) {
     return;
   }
-  const fileUrl = await getFileTabUrl(tabId);
+  const tabUrl = tab.url || tab.pendingUrl || "";
+  let fileUrl = await getFileTabUrl(tabId);
+
+  /* Fallback for browser restart: recover file URL directly from tab URL */
+  if (!fileUrl && tabUrl.startsWith("file://") && /\.pdf$/i.test(tabUrl)) {
+    fileUrl = tabUrl;
+  }
+
   if (!fileUrl) {
     return;
   }
   /* Only restore for file:// or about:blank URLs (reload targets) */
-  const tabUrl = tab.url || tab.pendingUrl || "";
   if (!tabUrl.startsWith("file://") && tabUrl !== "about:blank" &&
       !tabUrl.startsWith(baseUrl)) {
     /* Tab navigated away to a non-file URL; stop tracking it */
