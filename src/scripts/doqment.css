@@ -16,7 +16,7 @@
 }
 /* Reduce toolbar clutter in small devices */
 @media screen and (max-width: 435px) {
-  #toolbarViewerLeft > #numPages {
+  #toolbarViewerLeft #numPages {
     display: none;
   }
 }
@@ -31,4 +31,39 @@
 /* Document error */
 :is(#downloadButton, #secondaryToolbarToggleButton).outline {
   outline: 2px solid red;
+}
+/* Message bar */
+#toolbarContainer {
+  & > .message {
+    --button-width: 15px;
+    color: MarkText;
+    background-color: Mark;
+    font-size: small;
+    text-align: center;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    top: 3px;
+    transition: translate 0.5s;
+    pointer-events: none;
+  }
+  & > .message.dismissed {
+    z-index: -1;
+    translate: 0 -100%;
+  }
+  & > .message::before {
+    content: " ";
+    width: var(--button-width);
+  }
+  & > .message::after {
+    content: "\2715";
+    width: var(--button-width);
+    line-height: 1;
+    scale: 0.9;
+    margin-right: 5px;
+    cursor: pointer;
+    pointer-events: auto;
+  }
 }
