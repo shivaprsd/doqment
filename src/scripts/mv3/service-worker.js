@@ -215,16 +215,15 @@ function checkPermit(permit) {
 /* Open current URL in a viewer frame, if it is a PDF;
  * otherwise open a blank viewer with the splash screen */
 async function newViewer(tab) {
-  const url = tab.url;
   const hasFilesAccess = () => {
     /* Work around Chromium bug: activeTab insufficient for file: URL access */
     chrome.permissions.request({ origins: [url] }).catch(r => {});
     return chrome.extension.isAllowedFileSchemeAccess();
   };
-
+  const url = tab.url;
   let viewerUrl = splashUrl;
 
-  if (!URL.canParse(url)) {
+  if (!url) {
     chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
     return;
   }
@@ -235,7 +234,6 @@ async function newViewer(tab) {
     loadViewer(getViewerURL(baseUrl, url), tab.id);
     return;
   }
-
   chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
