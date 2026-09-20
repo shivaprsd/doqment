@@ -29,7 +29,7 @@ function redirect(details) {
     return { redirectUrl: getViewerURL(baseUrl, details.url) };
 }
 function showMessage(details) {
-  if (!details.frameId) {
+  if (!details.frameId && details.tabId >= 0) {
     const messageTab = { openerTabId: details.tabId, url: messageUrl };
     execOnEvent("open-local-pdf", [() => browser.tabs.create(messageTab)]);
     browser.webNavigation.onBeforeNavigate.removeListener(showMessage);
