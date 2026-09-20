@@ -222,12 +222,16 @@ async function newViewer(tab) {
   };
   const url = tab.url;
   let viewerUrl = splashUrl;
-  if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
-    viewerUrl = messageUrl;
-  } else if (await isPdfTab(tab.id)) {
-    loadViewer(getViewerURL(baseUrl, url), tab.id);
-    return;
+
+  if (url) {
+    if (new URL(url).protocol === "file:" && !await hasFilesAccess()) {
+      viewerUrl = messageUrl;
+    } else if (await isPdfTab(tab.id)) {
+      loadViewer(getViewerURL(baseUrl, url), tab.id);
+      return;
+    }
   }
+
   chrome.tabs.create({ url: viewerUrl, index: tab.index + 1 });
 }
 
