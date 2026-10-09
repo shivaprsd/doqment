@@ -1,8 +1,9 @@
 import { addLink, getViewerEventBus, isTouchScreen, setHashParam } from "./utils.js";
+import { ExtensionStore } from "./store.js";
 
 const Doqment = {
   config: {},
-  options: { autoToolbar: false },
+  options: { autoToolbar: false, persistLocalPdf: true },
   scrollDir: -1,
   scrollMark: 0,
   oldScrollTop: 0,
@@ -13,6 +14,7 @@ const Doqment = {
     return {
       docStyle: document.documentElement.style,
       viewer: document.getElementById("viewerContainer"),
+      toolbar: document.getElementById("toolbarContainer"),
       printButton: document.getElementById("printButton"),
       secondaryOpen: document.getElementById("secondaryOpenFile"),
       viewerClassList: document.getElementById("outerContainer").classList
@@ -33,12 +35,14 @@ const Doqment = {
       this.options.autoToolbar = true;
     }
     const { viewer, printButton, secondaryOpen } = this.config;
+
     viewer.addEventListener("scroll", this.toggleToolbar.bind(this));
     viewer.addEventListener("dblclick", this.toggleSmartZoom.bind(this));
     document.addEventListener("keydown", this.handleShortcut.bind(this));
     this.recreateOpenFile(printButton, "print").addEventListener("click", e => {
       secondaryOpen.dispatchEvent(new Event("click"));
     });
+
     const app = window.PDFViewerApplication;
     getViewerEventBus(app).then(eventBus => {
       /* Set base URL of PDF's links (bookmarks) to the original URL */
@@ -52,11 +56,16 @@ const Doqment = {
       if (options?.trackOutline !== false) {
         const update = () => eventBus.dispatch("currentoutlineitem");
         eventBus.on("pagesloaded", () => eventBus.on("pagechanging", update));
+        eventBus.on("pagesdestroy", () => eventBus.off("pagechanging", update));
       }
       eventBus.on("documenterror", this.handleError.bind(this));
       eventBus.on("resize", this.resetZoomStatus.bind(this));
       eventBus.on("scalechanging", this.resetZoomStatus.bind(this));
+      eventBus.on("fileinputchange", this.cacheLocalFile.bind(this));
     });
+    if (app.baseUrl.startsWith("/pages/"))
+      window.sessionStorage.setItem("doqment.blankViewer", true)
+    this.restoreState(app);
   },
 
   recreateOpenFile(toolbarButton, name) {
@@ -65,6 +74,53 @@ const Doqment = {
     toolbarButton.before(openButton);
     openButton.outerHTML = openButton.outerHTML.replaceAll(name, "open-file");
     return toolbarButton.previousElementSibling;
+  },
+
+  cacheLocalFile(e) {
+    const isBlankViewer = window.sessionStorage.getItem("doqment.blankViewer");
+
+    if (!isBlankViewer || !this.options.persistLocalPdf)
+      return;
+
+    const file = e.fileInput.files[0];
+    const app = window.PDFViewerApplication;
+    const cacheFile = () => {
+      const cacheKey = app.pdfDocument.fingerprints[0];
+      ExtensionStore.init().then(store => store.put(cacheKey, file));
+      window.sessionStorage.setItem("doqment.pdfCacheKey", cacheKey);
+    };
+    getViewerEventBus(app).then(ebus => ebus.on("documentloaded", cacheFile));
+  },
+
+  async restoreState(viewerApp) {
+    const cacheKey = window.sessionStorage.getItem("doqment.pdfCacheKey");
+    if (!cacheKey)
+      return;
+
+    const database = await ExtensionStore.init();
+    const file = await database.get(cacheKey);
+    if (file) {
+      const originalUrl = encodeURIComponent(file.name);
+      viewerApp.open({ url: URL.createObjectURL(file), originalUrl });
+      this.displayMessage(
+        "You are viewing a cached version of this file. " +
+        "If the original file was modified, open it again manually."
+      );
+    }
+  },
+
+  async displayMessage(message) {
+    const msgBar = document.createElement("div");
+    msgBar.className = "message";
+    msgBar.innerText = message;
+    this.config.toolbar.appendChild(msgBar);
+
+    const eventBus = await getViewerEventBus(window.PDFViewerApplication);
+    const runOnce = (event, func) => eventBus.on(event, func, { once: true });
+    const dismissMessage = () => msgBar.classList.add("dismissed");
+
+    runOnce("pagesloaded", () => runOnce("pagechanging", dismissMessage));
+    msgBar.onclick = msgBar.ontransitionend = () => msgBar.remove();
   },
 
   toggleToolbar() {

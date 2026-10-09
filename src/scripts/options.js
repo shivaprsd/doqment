@@ -1,33 +1,5 @@
 import { chooseViewerPath, hasCoarsePointer } from "./utils.js";
-
-class Preferences {
-  #defaults = {};
-  #storeKey = "";
-
-  constructor(storeKey) {
-    this.#storeKey = storeKey;
-    this.store = {};
-    this.stash = {};
-  }
-  init(properties) {
-    for (let key in properties) {
-      this.#defaults[key] = properties[key].default;
-    }
-    Object.freeze(this.#defaults);
-    this.store = JSON.parse(localStorage.getItem(this.#storeKey)) ?? this.store;
-  }
-  get(key) {
-    return this.store[key] ?? this.#defaults[key];
-  }
-  set(key, value) {
-    this.store[key] = value;
-    localStorage.setItem(this.#storeKey, JSON.stringify(this.store));
-  }
-  reset() {
-    this.store = {};
-    localStorage.setItem(this.#storeKey, JSON.stringify(this.store));
-  }
-}
+import { Preferences } from "./store.js";
 
 const PdfjsPrefs = {
   store: {},
